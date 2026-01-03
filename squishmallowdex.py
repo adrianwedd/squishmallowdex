@@ -26,7 +26,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from html import escape
 from typing import TextIO
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote, urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -937,6 +937,8 @@ def download_image(
 def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, logo_path: str = "") -> None:
     # Render a self-contained HTML page with search, sorting, and column picker.
     columns = [
+        "♥",        # Favourite (heart)
+        "Own",      # I own this
         "Image",
         "Name",
         "Type",
@@ -951,7 +953,7 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
     # Columns hidden by default
     hidden_default = {"Squad", "Size(s)", "Collector Number"}
     # Columns that shouldn't be sortable
-    no_sort = {"Image", "Page", "Bio"}
+    no_sort = {"♥", "Own", "Image", "Page", "Bio"}
 
     # Build header with data attributes for sorting/hiding
     head_cells = []
@@ -964,11 +966,20 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
     # Build the table body rows with data attributes
     body_rows = []
     for row in rows:
+        # Use URL hash as unique ID for localStorage
+        row_id = _sha1(row.get("URL") or row.get("Name") or "")[:12]
         cells = []
         for i, col in enumerate(columns):
-            val = row.get(col) or ""
-            cells.append(f'<td data-col="{i}">{val}</td>')
-        body_rows.append(f"<tr>{''.join(cells)}</tr>")
+            if col == "♥":
+                # Heart button for favourites
+                cells.append(f'<td data-col="{i}"><button class="heart-btn" data-id="{row_id}" aria-label="Favourite">♡</button></td>')
+            elif col == "Own":
+                # Checkbox for "I own this"
+                cells.append(f'<td data-col="{i}"><input type="checkbox" class="own-cb" data-id="{row_id}" aria-label="I own this"></td>')
+            else:
+                val = row.get(col) or ""
+                cells.append(f'<td data-col="{i}">{val}</td>')
+        body_rows.append(f'<tr data-id="{row_id}">{"".join(cells)}</tr>')
 
     # Load and encode logo if available
     logo_b64 = ""
@@ -981,17 +992,38 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
     # Column config as JSON for JS
     col_config = json.dumps([{"name": c, "hidden": c in hidden_default, "sortable": c not in no_sort} for c in columns])
 
+    # PWA manifest - URL-encoded for data URI
+    manifest = {
+        "name": "Squishmallowdex",
+        "short_name": "Squishdex",
+        "description": "Your Pokédex for Squishmallows - works offline!",
+        "start_url": ".",
+        "display": "standalone",
+        "theme_color": "#00bcd4",
+        "background_color": "#ffffff",
+        "icons": [
+            {"src": f"data:image/png;base64,{logo_b64}", "sizes": "192x192", "type": "image/png"},
+            {"src": f"data:image/png;base64,{logo_b64}", "sizes": "512x512", "type": "image/png"},
+        ] if logo_b64 else []
+    }
+    manifest_json = quote(json.dumps(manifest), safe='')
+
     # Inline CSS/JS so the page works fully offline.
     html = f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Squishmallowdex"/>
+<meta name="theme-color" content="#00bcd4"/>
+<link rel="manifest" href="data:application/json,{manifest_json}"/>
 <title>{escape(title)}</title>
 <style>
   :root {{
     --ink: #1f1a16;
-    --accent: #ff7a59;
+    --accent: #00bcd4;
     --card: #ffffff;
     --muted: #6b5b52;
   }}
@@ -1090,7 +1122,7 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
     font-size: 14px;
   }}
   .col-dropdown label:hover {{
-    background: #fff7ef;
+    background: #e0f7fa;
   }}
   .col-dropdown input {{
     width: 16px;
@@ -1113,10 +1145,10 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
     padding: 10px 12px;
     text-align: left;
     vertical-align: top;
-    border-bottom: 1px solid #f0e5dc;
+    border-bottom: 1px solid #e0e0e0;
   }}
   th {{
-    background: #fff1e5;
+    background: #e0f7fa;
     position: sticky;
     top: 0;
     z-index: 1;
@@ -1127,7 +1159,7 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
     user-select: none;
   }}
   th[data-sortable="true"]:hover {{
-    background: #ffe8d5;
+    background: #b2ebf2;
   }}
   th .sort-indicator {{
     margin-left: 4px;
@@ -1137,19 +1169,128 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
     opacity: 1;
   }}
   tr:hover {{
-    background: #fff7ef;
+    background: #e0f7fa;
   }}
   img.thumb {{
     width: 72px;
     height: 72px;
     object-fit: cover;
     border-radius: 12px;
-    border: 2px solid #ffe1d0;
+    border: 2px solid #80deea;
   }}
   /* Bio column: limit width for comfortable reading */
-  td[data-col="8"] {{
+  td[data-col="10"] {{
     max-width: 300px;
     line-height: 1.4;
+  }}
+  /* Heart button */
+  .heart-btn {{
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: transform 0.15s;
+  }}
+  .heart-btn:hover {{
+    transform: scale(1.2);
+  }}
+  .heart-btn.active {{
+    color: #e74c3c;
+  }}
+  .heart-btn.active::after {{
+    content: '';
+  }}
+  .heart-btn:not(.active)::after {{
+    content: '';
+  }}
+  /* Checkbox styling */
+  .own-cb {{
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--accent);
+  }}
+  /* Filter buttons */
+  .filters {{
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }}
+  .filter-btn {{
+    padding: 8px 14px;
+    border: 2px solid #ddd;
+    border-radius: 20px;
+    background: var(--card);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }}
+  .filter-btn:hover {{
+    border-color: var(--accent);
+  }}
+  .filter-btn.active {{
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }}
+  /* Mobile responsive */
+  @media (max-width: 768px) {{
+    header {{
+      padding: 16px;
+    }}
+    .logo {{
+      height: 48px;
+    }}
+    h1 {{
+      font-size: 22px;
+    }}
+    .controls {{
+      flex-direction: column;
+      gap: 8px;
+    }}
+    .search {{
+      max-width: none;
+      width: 100%;
+    }}
+    .filters {{
+      width: 100%;
+      justify-content: flex-start;
+    }}
+    th, td {{
+      padding: 8px 6px;
+      font-size: 14px;
+    }}
+    img.thumb {{
+      width: 56px;
+      height: 56px;
+    }}
+    td[data-col="10"] {{
+      max-width: 200px;
+      font-size: 13px;
+    }}
+  }}
+  @media (max-width: 480px) {{
+    .table-wrap {{
+      padding: 0 8px 20px;
+    }}
+    th, td {{
+      padding: 6px 4px;
+      font-size: 13px;
+    }}
+    img.thumb {{
+      width: 48px;
+      height: 48px;
+    }}
+    .heart-btn {{
+      font-size: 18px;
+      padding: 2px 4px;
+    }}
+    .own-cb {{
+      width: 18px;
+      height: 18px;
+    }}
   }}
   .page-link {{
     color: var(--accent);
@@ -1175,6 +1316,10 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
   </div>
   <div class="controls">
     <input id="search" class="search" type="search" placeholder="Search by name, type, color..."/>
+    <div class="filters">
+      <button class="filter-btn" id="filterFav">❤️ Favourites</button>
+      <button class="filter-btn" id="filterOwn">✓ I Own</button>
+    </div>
     <div class="col-picker">
       <button class="col-btn" id="colBtn">⚙️ Columns</button>
       <div class="col-dropdown" id="colDropdown"></div>
@@ -1302,14 +1447,72 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
     countEl.textContent = visible === total ? `${{total}} Squishmallows` : `Showing ${{visible}} of ${{total}}`;
   }}
 
-  search.addEventListener('input', () => {{
+  // ─── Favourites & Ownership ───
+  let favourites = {{}};
+  let owned = {{}};
+  try {{
+    favourites = JSON.parse(localStorage.getItem('squishdex-fav') || '{{}}');
+    owned = JSON.parse(localStorage.getItem('squishdex-own') || '{{}}');
+  }} catch(e) {{}}
+
+  // Initialize hearts and checkboxes from storage
+  document.querySelectorAll('.heart-btn').forEach(btn => {{
+    const id = btn.dataset.id;
+    if (favourites[id]) {{
+      btn.classList.add('active');
+      btn.textContent = '❤️';
+    }}
+    btn.addEventListener('click', () => {{
+      favourites[id] = !favourites[id];
+      btn.classList.toggle('active', favourites[id]);
+      btn.textContent = favourites[id] ? '❤️' : '♡';
+      localStorage.setItem('squishdex-fav', JSON.stringify(favourites));
+      applyFilters();
+    }});
+  }});
+
+  document.querySelectorAll('.own-cb').forEach(cb => {{
+    const id = cb.dataset.id;
+    cb.checked = !!owned[id];
+    cb.addEventListener('change', () => {{
+      owned[id] = cb.checked;
+      localStorage.setItem('squishdex-own', JSON.stringify(owned));
+      applyFilters();
+    }});
+  }});
+
+  // Filter buttons
+  const filterFav = document.getElementById('filterFav');
+  const filterOwn = document.getElementById('filterOwn');
+  let showOnlyFav = false;
+  let showOnlyOwn = false;
+
+  filterFav.addEventListener('click', () => {{
+    showOnlyFav = !showOnlyFav;
+    filterFav.classList.toggle('active', showOnlyFav);
+    applyFilters();
+  }});
+
+  filterOwn.addEventListener('click', () => {{
+    showOnlyOwn = !showOnlyOwn;
+    filterOwn.classList.toggle('active', showOnlyOwn);
+    applyFilters();
+  }});
+
+  function applyFilters() {{
     const q = search.value.trim().toLowerCase();
     Array.from(tbody.querySelectorAll('tr')).forEach(row => {{
+      const id = row.dataset.id;
       const text = row.textContent.toLowerCase();
-      row.style.display = text.includes(q) ? '' : 'none';
+      const matchesSearch = text.includes(q);
+      const matchesFav = !showOnlyFav || favourites[id];
+      const matchesOwn = !showOnlyOwn || owned[id];
+      row.style.display = (matchesSearch && matchesFav && matchesOwn) ? '' : 'none';
     }});
     updateCount();
-  }});
+  }}
+
+  search.addEventListener('input', applyFilters);
 
   updateCount();
 }})();
