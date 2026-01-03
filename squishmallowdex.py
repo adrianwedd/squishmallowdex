@@ -136,12 +136,12 @@ class AdventureLog:
         "💡 A 'gigabyte' could store about 300 songs!",
         "💡 The @ symbol is over 500 years old!",
         "💡 The first video game was created in 1958!",
-        "💡 Robots on Mars run on code similar to what powers this script!",
+        "💡 NASA uses Python for data analysis and mission planning!",
         "💡 Some computers can do billions of calculations per second!",
         "💡 QR codes were invented to track car parts in factories!",
         "💡 The cloud is really just other people's computers storing your stuff!",
-        "💡 Ctrl+Z for undo was invented in 1976!",
-        "💡 The caps lock key exists because early keyboards couldn't do lowercase!",
+        "💡 The undo command was invented at Xerox PARC in the 1970s!",
+        "💡 Early typewriters only had uppercase - that's why we have Shift keys!",
         # Gentle Reminders & Self-Care
         "💧 Hey! Have you had some water recently? Your brain works better hydrated!",
         "💧 Water break! Even computers need cooling - and so do you!",
@@ -420,9 +420,9 @@ class AdventureLog:
         if total_count in self.MILESTONES:
             self._celebrate_milestone(total_count)
 
-        # Occasionally show educational facts in adventure mode
-        if self.adventure_mode and random.random() < 0.15:
-            fact = random.choice(self.DID_YOU_KNOW)
+        # Show educational facts every 25 catches in adventure mode
+        if self.adventure_mode and self.new_catches > 0 and self.new_catches % 25 == 0:
+            fact = self.DID_YOU_KNOW[self.new_catches // 25 % len(self.DID_YOU_KNOW)]
             self._print(self._c("blue", f"     {fact}"))
 
     def _celebrate_milestone(self, n: int) -> None:
@@ -1032,7 +1032,7 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
     margin: 0;
     font-family: "Trebuchet MS", "Verdana", "Geneva", sans-serif;
     color: var(--ink);
-    background: #ffffff;
+    background: #32bcc6;
   }}
   header {{
     padding: 24px 20px 16px;
