@@ -72,7 +72,7 @@ See [Usage Guide](USAGE.md) for more options.
 
 ## Use on Phone or Tablet
 
-Want to browse your collection on the go?
+Want to browse your collection on the go? The HTML file is completely self-contained - just one file with everything included!
 
 1. Transfer **squishmallowdex.html** to your phone (AirDrop, email, cloud drive, etc.)
 2. Open it in Safari (iPhone) or Chrome (Android)
