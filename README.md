@@ -176,6 +176,14 @@ Your progress is saved automatically!
 
 ---
 
+## Contributing
+
+![Squishy](squishy-readme.png)
+
+Found a bug? Have an idea? Contributions are welcome!
+
+---
+
 ## Have Fun!
 
 **Gotta Squish 'Em All!**
