@@ -10,7 +10,7 @@ Download info about every Squishmallow and browse your collection offline!
 
 ## Quick Start
 
-1. Download this folder
+1. **Download:** Click the green **Code** button above → **Download ZIP** → Unzip it
 2. Open Terminal and `cd` to the folder
 3. Run `./setup.sh` (Mac/Linux) or [see Windows instructions](INSTALL.md)
 4. Run `python3 squishmallowdex.py --limit 50`
