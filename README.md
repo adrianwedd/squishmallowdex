@@ -47,7 +47,9 @@ Watch as 50 Squishmallows get added to your collection!
 
 ### 4. View Your Collection
 
-Open **squishmallowdex.html** in any browser. That's it!
+Open **squishmallowdex.html** in any browser - search, sort, and filter your squish!
+
+You also get **squishmallowdex.csv** if you want to use the data in Excel or Google Sheets.
 
 ---
 
@@ -65,6 +67,18 @@ python3 squishmallowdex.py --stats-only
 ```
 
 See [Usage Guide](USAGE.md) for more options.
+
+---
+
+## Use on Phone or Tablet
+
+Want to browse your collection on the go?
+
+1. Transfer **squishmallowdex.html** to your phone (AirDrop, email, cloud drive, etc.)
+2. Open it in Safari (iPhone) or Chrome (Android)
+3. Tap **Share** → **Add to Home Screen**
+
+Now you have a Squishmallowdex app on your phone that works offline!
 
 ---
 
