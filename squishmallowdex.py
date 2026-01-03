@@ -306,7 +306,7 @@ class AdventureLog:
     COLORS = {
         "reset": "\033[0m",
         "bold": "\033[1m",
-        "dim": "\033[2m",
+        "dim": "\033[38;5;117m",
         "pink": "\033[38;5;213m",
         "purple": "\033[38;5;141m",
         "blue": "\033[38;5;75m",
@@ -315,7 +315,7 @@ class AdventureLog:
         "yellow": "\033[38;5;228m",
         "orange": "\033[38;5;215m",
         "red": "\033[38;5;203m",
-        "gray": "\033[38;5;245m",
+        "gray": "\033[38;5;252m",
     }
 
     def _c(self, color: str, text: str) -> str:
@@ -420,9 +420,9 @@ class AdventureLog:
         if total_count in self.MILESTONES:
             self._celebrate_milestone(total_count)
 
-        # Show educational facts every 25 catches in adventure mode
-        if self.adventure_mode and self.new_catches > 0 and self.new_catches % 25 == 0:
-            fact = self.DID_YOU_KNOW[self.new_catches // 25 % len(self.DID_YOU_KNOW)]
+        # Show educational facts every 10 catches in adventure mode
+        if self.adventure_mode and self.new_catches > 0 and self.new_catches % 10 == 0:
+            fact = self.DID_YOU_KNOW[self.new_catches // 10 % len(self.DID_YOU_KNOW)]
             self._print(self._c("blue", f"     {fact}"))
 
     def _celebrate_milestone(self, n: int) -> None:
@@ -989,10 +989,28 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
 
     logo_html = f'<img src="data:image/png;base64,{logo_b64}" alt="Squishmallowdex" class="logo"/>' if logo_b64 else ""
 
+    # Load square PWA icons
+    script_dir = os.path.dirname(logo_path) if logo_path else "."
+    icon_192_b64 = ""
+    icon_512_b64 = ""
+    icon_192_path = os.path.join(script_dir, "icon-192.png")
+    icon_512_path = os.path.join(script_dir, "icon-512.png")
+    if os.path.exists(icon_192_path):
+        with open(icon_192_path, "rb") as f:
+            icon_192_b64 = base64.b64encode(f.read()).decode("ascii")
+    if os.path.exists(icon_512_path):
+        with open(icon_512_path, "rb") as f:
+            icon_512_b64 = base64.b64encode(f.read()).decode("ascii")
+
     # Column config as JSON for JS
     col_config = json.dumps([{"name": c, "hidden": c in hidden_default, "sortable": c not in no_sort} for c in columns])
 
     # PWA manifest - URL-encoded for data URI
+    pwa_icons = []
+    if icon_192_b64:
+        pwa_icons.append({"src": f"data:image/png;base64,{icon_192_b64}", "sizes": "192x192", "type": "image/png"})
+    if icon_512_b64:
+        pwa_icons.append({"src": f"data:image/png;base64,{icon_512_b64}", "sizes": "512x512", "type": "image/png"})
     manifest = {
         "name": "Squishmallowdex",
         "short_name": "Squishdex",
@@ -1001,10 +1019,7 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
         "display": "standalone",
         "theme_color": "#00bcd4",
         "background_color": "#ffffff",
-        "icons": [
-            {"src": f"data:image/png;base64,{logo_b64}", "sizes": "192x192", "type": "image/png"},
-            {"src": f"data:image/png;base64,{logo_b64}", "sizes": "512x512", "type": "image/png"},
-        ] if logo_b64 else []
+        "icons": pwa_icons
     }
     manifest_json = quote(json.dumps(manifest), safe='')
 
@@ -1037,7 +1052,6 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
   header {{
     padding: 24px 20px 16px;
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: 16px;
   }}
@@ -1049,8 +1063,7 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
     padding: 4px;
   }}
   .header-text {{
-    flex: 1;
-    min-width: 200px;
+    flex: 0 0 auto;
   }}
   h1 {{
     margin: 0 0 4px;
@@ -1066,8 +1079,8 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
     display: flex;
     gap: 10px;
     align-items: center;
-    flex-wrap: wrap;
-    width: 100%;
+    flex: 1;
+    justify-content: flex-end;
   }}
   .search {{
     flex: 1;
@@ -1239,6 +1252,7 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
   @media (max-width: 768px) {{
     header {{
       padding: 16px;
+      flex-wrap: wrap;
     }}
     .logo {{
       height: 48px;
@@ -1247,16 +1261,16 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
       font-size: 22px;
     }}
     .controls {{
-      flex-direction: column;
-      gap: 8px;
+      flex-wrap: wrap;
+      width: 100%;
+      justify-content: flex-start;
     }}
     .search {{
       max-width: none;
-      width: 100%;
+      flex: 1 1 100%;
     }}
     .filters {{
-      width: 100%;
-      justify-content: flex-start;
+      width: auto;
     }}
     th, td {{
       padding: 8px 6px;

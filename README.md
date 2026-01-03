@@ -1,161 +1,184 @@
 # Squishmallowdex
 
+![Squishmallowdex Logo](squishmallowdex.png)
+
 **Your very own Squishmallow collection tracker - like a Pokédex, but for Squishmallows!**
 
 This program downloads information about every Squishmallow from the internet and saves it to your computer. Then you can search and browse your collection even without internet!
 
 ---
 
-## What You Need
+## Before You Start (One-Time Setup)
 
-Before you start, make sure you have:
+You need to install **Python** on your computer first. Python is a programming language - it's what makes this program work!
 
-1. **A computer** (Mac, Windows, or Linux)
-2. **Python 3** installed (ask a grown-up if you're not sure)
-3. **Terminal** - this is where you type commands:
-   - On Mac: Open "Terminal" from Applications > Utilities
-   - On Windows: Open "Command Prompt" or "PowerShell"
+### Installing Python
+
+#### On Mac:
+1. Open **Safari** (or any web browser)
+2. Go to: **https://www.python.org/downloads/**
+3. Click the big yellow **"Download Python"** button
+4. When it downloads, double-click the file to install it
+5. Click through the installer (just keep clicking "Continue" and "Agree")
+6. Done! Python is now installed
+
+#### On Windows:
+1. Open your web browser
+2. Go to: **https://www.python.org/downloads/**
+3. Click the big yellow **"Download Python"** button
+4. When it downloads, double-click the file
+5. **IMPORTANT:** Check the box that says **"Add Python to PATH"** at the bottom!
+6. Click "Install Now"
+7. Done! Python is now installed
 
 ---
 
-## Getting Started
+## How to Run Squishmallowdex
 
-### Step 1: Open Terminal
+### Step 1: Download this folder
 
-Find and open your terminal program. You'll see a window where you can type commands.
+If you haven't already, download this whole folder to your computer. Remember where you saved it! (For example: your Desktop, or your Downloads folder)
 
-### Step 2: Go to the folder
+### Step 2: Open the Terminal
 
-Type this command and press Enter:
+The Terminal is a special window where you can type commands to your computer. Don't worry - it's not scary!
+
+#### On Mac:
+1. Click the **magnifying glass** in the top-right corner of your screen (it's called Spotlight)
+2. Type: **Terminal**
+3. Press **Enter** (or click on Terminal when it appears)
+4. A white or black window with text will open - that's Terminal!
+
+#### On Windows:
+1. Click the **Start** button (Windows icon in the bottom-left)
+2. Type: **cmd**
+3. Click on **"Command Prompt"** when it appears
+4. A black window with text will open - that's your terminal!
+
+### Step 3: Go to the Squishmallowdex folder
+
+Now you need to tell the terminal where the Squishmallowdex folder is.
+
+**The Easy Way (Recommended!):**
+1. Type `cd ` (that's the letters **c** and **d**, then a **space**) - don't press Enter yet!
+2. Now **drag the Squishmallowdex folder** from Finder/File Explorer and **drop it onto the terminal window**
+3. The folder path will magically appear!
+4. Now press **Enter**
+
+**Example of what it might look like:**
+```
+cd /Users/yourname/Desktop/squishmallows
+```
+
+### Step 4: Install the required helpers
+
+The first time you run this, you need to install two helper programs. Copy and paste this command, then press Enter:
 
 ```
-cd /path/to/squishmallows
+pip3 install requests beautifulsoup4
 ```
 
-(Replace `/path/to/squishmallows` with wherever you saved this folder!)
+You only need to do this once!
 
-**Tip:** You can drag the folder onto the terminal window and it will type the path for you!
+### Step 5: Catch your first Squishmallows!
 
-### Step 3: Catch your first Squishmallows!
-
-Type this command and press Enter:
+Now for the fun part! Type this command and press Enter:
 
 ```
 python3 squishmallowdex.py --limit 50
 ```
 
-This will catch your first 50 Squishmallows! Watch as they get added to your collection!
+Watch as 50 Squishmallows get added to your collection! You'll see fun messages as each one is caught.
 
 ---
 
 ## Viewing Your Collection
 
-After running the script, you'll have two new files:
+After the program finishes, look in your Squishmallowdex folder. You'll see a new file:
 
-| File | What it is |
-|------|------------|
-| `squishmallowdex.html` | Open this in a web browser to see your collection with pictures! |
-| `squishmallowdex.csv` | Open this in Excel or Google Sheets to see all the data! |
+**`squishmallowdex.html`** - This is your collection!
 
-**To open the HTML file:** Double-click it, or drag it into your web browser (Chrome, Safari, Firefox, etc.)
+**To open it:**
+- **Double-click** on the file, OR
+- **Drag it** into Chrome, Safari, Firefox, or any web browser
+
+You'll see a beautiful searchable table with all your Squishmallows!
+
+### What you can do:
+- **Search** - Type in the search box to find Squishmallows by name, color, or type
+- **Sort** - Click on any column header to sort
+- **Favourite** - Click the heart to mark your favourites
+- **Own** - Check the box for Squishmallows you actually own!
+- **Filter** - Click "Favourites" or "I Own" to show only those
 
 ---
 
-## Cool Commands to Try
+## Catching More Squishmallows
 
-### Catch more Squishmallows
+Want more? Just run the command again! Open Terminal, go to the folder (Step 3), and try:
+
+### Catch 100 more:
 ```
 python3 squishmallowdex.py --limit 100
 ```
 
-### Catch ALL the Squishmallows (this takes a while!)
+### Catch ALL of them (this takes a long time!):
 ```
 python3 squishmallowdex.py --limit 0
 ```
 
-### See your collection stats
+### Just see your stats:
 ```
 python3 squishmallowdex.py --stats-only
 ```
 
-### Faster mode (skip downloading pictures)
-```
-python3 squishmallowdex.py --limit 50 --no-download-images
-```
+---
 
-### Quiet mode (less messages)
-```
-python3 squishmallowdex.py --limit 50 --quiet
-```
+## Stopping and Resuming
 
-### See everything that's happening
-```
-python3 squishmallowdex.py --limit 10 -v
-```
+- **To stop:** Press **Ctrl+C** (hold the Ctrl key and press C)
+- **To resume:** Just run the same command again - it remembers where you were!
 
-### Super detailed mode (for debugging)
-```
-python3 squishmallowdex.py --limit 10 -vv
-```
+Your progress is saved automatically!
 
-### Rebuild your whole collection from scratch
-```
-python3 squishmallowdex.py --rebuild --limit 500
-```
+---
+
+## Troubleshooting
+
+### "python3 is not recognized" or "command not found"
+- Python isn't installed correctly. Go back to "Installing Python" above
+- On Windows, make sure you checked "Add Python to PATH" during installation
+
+### "No module named requests" or "No module named bs4"
+- Run this command: `pip3 install requests beautifulsoup4`
+
+### The pictures aren't showing
+- The first run downloads pictures, which takes time
+- Make sure you're connected to the internet
+
+### Something else went wrong
+- Try running with `--rebuild` to start fresh:
+  ```
+  python3 squishmallowdex.py --rebuild --limit 50
+  ```
+
+### Still stuck?
+- Ask a grown-up for help!
+- Check the `squishmallow.log` file for error messages
 
 ---
 
 ## Tips & Tricks
 
-- **You can stop anytime!** Press `Ctrl+C` to stop. Your progress is saved!
-
-- **Resume later:** Just run the command again and it will continue where you left off.
-
-- **Slow internet?** The script is polite and waits between downloads so it doesn't overwhelm the website.
-
-- **Something went wrong?** Try running with `--rebuild` to start fresh.
-
-- **Want to see the log?** Check `squishmallow.log` for a record of everything that happened.
-
----
-
-## Using Your Squishmallowdex
-
-Once you open `squishmallowdex.html` in a browser:
-
-- **Search:** Type in the search box to find Squishmallows by name, type, or color
-- **Sort:** Click on column headers (Name, Type, Color, Year) to sort
-- **Show/Hide columns:** Click the "Columns" button to choose what to show
-- **See full picture:** Click on any Squishmallow's picture to see the big version
-- **Visit wiki:** Click "wiki" to see that Squishmallow's page online
-
----
-
-## What's in this folder?
-
-| File/Folder | What it is |
-|-------------|------------|
-| `squishmallowdex.py` | The main program |
-| `squishmallowdex.html` | Your collection (open in browser) |
-| `squishmallowdex.csv` | Your collection (open in spreadsheet) |
-| `squishmallowdex.png` | The logo |
-| `squish_images/` | Downloaded pictures of your Squishmallows |
-| `cache_html/` | Saved web pages (makes re-runs fast!) |
-| `progress_urls.txt` | Keeps track of which pages we've visited |
-| `squishmallow.log` | A log of everything that happened |
-
----
-
-## Need Help?
-
-- **See all options:** `python3 squishmallowdex.py --help`
-- **Ask a grown-up** if you get stuck!
+- **Works offline!** Once downloaded, you can view your collection without internet
+- **Add to phone!** Open the HTML file on your phone and "Add to Home Screen" for an app-like experience
+- **Slow internet?** The program waits between downloads to be polite to the website
 
 ---
 
 ## Have Fun!
 
-Gotta Squish 'Em All!
+**Gotta Squish 'Em All!**
 
 ---
 
