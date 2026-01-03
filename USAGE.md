@@ -52,6 +52,22 @@ python3 squishmallowdex.py --rebuild --limit 50
 
 ---
 
+## Portable Mode (Self-Contained HTML)
+
+Want a single file with all images built-in? Use `--embed-images`:
+
+```bash
+# After catching some Squishmallows, create portable version
+python3 squishmallowdex.py --stats-only --embed-images
+```
+
+This creates a ~6-30MB HTML file (depending on collection size) with all images embedded as thumbnails. Perfect for:
+- Sharing your collection with friends
+- Viewing on devices without internet
+- Keeping everything in one file
+
+---
+
 ## Tips
 
 - **Works offline!** View your collection without internet
