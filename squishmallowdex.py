@@ -375,7 +375,7 @@ class AdventureLog:
 ║   ██╔════╝██╔═══██╗██║   ██║██║██╔════╝██║  ██║             ║
 ║   ███████╗██║   ██║██║   ██║██║███████╗███████║  MALLOWDEX  ║
 ║   ╚════██║██║▄▄ ██║██║   ██║██║╚════██║██╔══██║             ║
-║   ███████║╚██████╔╝╚██████╔╝██║███████║██║  ██║  v0.1       ║
+║   ███████║╚██████╔╝╚██████╔╝██║███████║██║  ██║  v1.0.0     ║
 ║   ╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚═╝╚══════╝╚═╝  ╚═╝             ║
 ║                                                             ║
 ║     🌟 Gotta Squish 'Em All! Your Offline Collection 🌟     ║
@@ -505,13 +505,14 @@ class AdventureLog:
             self._print(self._c("yellow", "    🔥 THE PHOENIX RISES! YOUR COLLECTION IS LEGENDARY! 🔥\n"))
 
     def summary(self, total_rows: int, existing_count: int, total_available: int = 0,
-                 csv_path: str = "", html_path: str = "") -> None:
+                 skipped_count: int = 0, csv_path: str = "", html_path: str = "") -> None:
         """Print the epic summary at the end!"""
         elapsed = time.time() - self.start_time
         mins, secs = divmod(int(elapsed), 60)
 
         # Track if we should show phoenix at the end (easter egg for collecting ALL)
-        collected_all = total_available > 0 and total_rows >= total_available
+        total_valid = total_available - skipped_count
+        collected_all = total_valid > 0 and total_rows >= total_valid
 
         self._print("")
         self._print(self._c("pink", "    SQUISHMALLOWDEX BATCH COMPLETE!"))
@@ -535,9 +536,13 @@ class AdventureLog:
         if total_available > 0:
             self._print("")
             self._print(self._c("purple", "    ─── Completion Progress ───"))
-            pct = (total_rows / total_available) * 100
-            remaining = total_available - total_rows
+            # Subtract skipped pages (invalid/redirect) from total
+            total_valid = total_available - skipped_count
+            pct = (total_rows / total_valid) * 100 if total_valid > 0 else 100
+            remaining = total_valid - total_rows
             self._print(f"    Progress:             {pct:.1f}% complete!")
+            if skipped_count > 0:
+                self._print(f"    Skipped pages:        {skipped_count} (redirects/invalid)")
             if remaining > 0:
                 self._print(f"    Remaining:            {self._c('yellow', f'{remaining} more to catch em all!')}")
             else:
@@ -1986,9 +1991,8 @@ def main() -> None:
     log.debug(f"Wrote CSV to {args.csv}")
 
     # Show the epic summary!
-    # Pass total_available=len(urls) for the phoenix easter egg (shows when ALL collected)
     log.summary(len(rows), existing_count, total_available=len(urls),
-                csv_path=args.csv, html_path=args.out)
+                skipped_count=len(skipped_urls), csv_path=args.csv, html_path=args.out)
 
     # Close the log file
     log.close_log()
