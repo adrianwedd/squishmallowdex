@@ -8,87 +8,37 @@ This program downloads information about every Squishmallow from the internet an
 
 ---
 
-## Before You Start (One-Time Setup)
+## Quick Start (Mac / Linux)
 
-You need to install **Python** on your computer first. Python is a programming language - it's what makes this program work!
+1. **Download** this folder to your computer
+2. **Open Terminal** (Mac: Spotlight → type "Terminal" → Enter)
+3. **Go to the folder:** Type `cd ` then drag the folder onto Terminal and press Enter
+4. **Run setup:** `./setup.sh`
+5. **Catch Squishmallows:** `python3 squishmallowdex.py --limit 50`
 
-### Installing Python
-
-#### On Mac:
-1. Open **Safari** (or any web browser)
-2. Go to: **https://www.python.org/downloads/**
-3. Click the big yellow **"Download Python"** button
-4. When it downloads, double-click the file to install it
-5. Click through the installer (just keep clicking "Continue" and "Agree")
-6. Done! Python is now installed
-
-#### On Windows:
-1. Open your web browser
-2. Go to: **https://www.python.org/downloads/**
-3. Click the big yellow **"Download Python"** button
-4. When it downloads, double-click the file
-5. **IMPORTANT:** Check the box that says **"Add Python to PATH"** at the bottom!
-6. Click "Install Now"
-7. Done! Python is now installed
+That's it! Watch as Squishmallows get added to your collection!
 
 ---
 
-## How to Run Squishmallowdex
+## Quick Start (Windows)
 
-### Step 1: Download this folder
+### Step 1: Install Python
 
-If you haven't already, download this whole folder to your computer. Remember where you saved it! (For example: your Desktop, or your Downloads folder)
+1. Go to **https://www.python.org/downloads/**
+2. Click the big yellow **"Download Python"** button
+3. Run the installer
+4. **IMPORTANT:** Check **"Add Python to PATH"** at the bottom!
+5. Click "Install Now"
 
-### Step 2: Open the Terminal
+### Step 2: Download and Run
 
-The Terminal is a special window where you can type commands to your computer. Don't worry - it's not scary!
+1. **Download** this folder to your computer
+2. **Open Command Prompt** (Start → type "cmd" → Enter)
+3. **Go to the folder:** Type `cd ` then drag the folder onto the window and press Enter
+4. **Install helpers:** `pip3 install requests beautifulsoup4`
+5. **Catch Squishmallows:** `python3 squishmallowdex.py --limit 50`
 
-#### On Mac:
-1. Click the **magnifying glass** in the top-right corner of your screen (it's called Spotlight)
-2. Type: **Terminal**
-3. Press **Enter** (or click on Terminal when it appears)
-4. A white or black window with text will open - that's Terminal!
-
-#### On Windows:
-1. Click the **Start** button (Windows icon in the bottom-left)
-2. Type: **cmd**
-3. Click on **"Command Prompt"** when it appears
-4. A black window with text will open - that's your terminal!
-
-### Step 3: Go to the Squishmallowdex folder
-
-Now you need to tell the terminal where the Squishmallowdex folder is.
-
-**The Easy Way (Recommended!):**
-1. Type `cd ` (that's the letters **c** and **d**, then a **space**) - don't press Enter yet!
-2. Now **drag the Squishmallowdex folder** from Finder/File Explorer and **drop it onto the terminal window**
-3. The folder path will magically appear!
-4. Now press **Enter**
-
-**Example of what it might look like:**
-```
-cd /Users/yourname/Desktop/squishmallows
-```
-
-### Step 4: Install the required helpers
-
-The first time you run this, you need to install two helper programs. Copy and paste this command, then press Enter:
-
-```
-pip3 install requests beautifulsoup4
-```
-
-You only need to do this once!
-
-### Step 5: Catch your first Squishmallows!
-
-Now for the fun part! Type this command and press Enter:
-
-```
-python3 squishmallowdex.py --limit 50
-```
-
-Watch as 50 Squishmallows get added to your collection! You'll see fun messages as each one is caught.
+Watch as Squishmallows get added to your collection!
 
 ---
 
