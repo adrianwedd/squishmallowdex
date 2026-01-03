@@ -24,3 +24,8 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Source images (for resizing)
+squishmallowdex-big.png
+squishy.png
+help.txt
