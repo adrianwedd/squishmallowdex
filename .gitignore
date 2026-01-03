@@ -1,0 +1,26 @@
+# Generated files
+squishmallowdex.html
+squishmallowdex.csv
+squishmallow.log
+
+# Cache and downloaded content
+cache_html/
+squish_images/
+
+# Progress tracking
+progress_urls.txt
+progress_urls_skipped.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
