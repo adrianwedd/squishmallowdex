@@ -21,7 +21,7 @@ echo
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-pip3 install --quiet requests beautifulsoup4
+pip3 install --quiet requests beautifulsoup4 Pillow
 
 if [ $? -eq 0 ]; then
     echo "✅ Dependencies installed!"

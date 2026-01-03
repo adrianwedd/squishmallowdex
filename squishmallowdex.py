@@ -23,6 +23,13 @@ import re
 import sys
 import time
 from collections import Counter
+from io import BytesIO
+
+try:
+    from PIL import Image
+    HAS_PIL = True
+except ImportError:
+    HAS_PIL = False
 from dataclasses import dataclass, field
 from html import escape
 from typing import TextIO
@@ -939,6 +946,45 @@ def download_image(
     return path
 
 
+def image_to_base64_thumbnail(
+    image_source: str, session: requests.Session | None = None, max_size: int = 100
+) -> str | None:
+    """Resize an image to a thumbnail and return as base64 data URL.
+
+    image_source can be a local path or a URL. If it's a URL and session is provided,
+    the image will be downloaded and converted.
+    """
+    if not HAS_PIL or not image_source:
+        return None
+    try:
+        # Determine if it's a URL or local file
+        if image_source.startswith(("http://", "https://")):
+            if session is None:
+                return None
+            resp = session.get(image_source, timeout=15)
+            if resp.status_code != 200:
+                return None
+            img = Image.open(BytesIO(resp.content))
+        elif os.path.exists(image_source):
+            img = Image.open(image_source)
+        else:
+            return None
+
+        with img:
+            # Convert to RGB if necessary (for PNG with transparency, etc.)
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            # Resize maintaining aspect ratio
+            img.thumbnail((max_size, max_size), Image.LANCZOS)
+            # Save to bytes as JPEG
+            buffer = BytesIO()
+            img.save(buffer, format="JPEG", quality=60)
+            b64 = base64.b64encode(buffer.getvalue()).decode("ascii")
+            return f"data:image/jpeg;base64,{b64}"
+    except Exception:
+        return None
+
+
 def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, logo_path: str = "") -> None:
     # Render a self-contained HTML page with search, sorting, and column picker.
     columns = [
@@ -1551,17 +1597,29 @@ def build_html_rows(
     download_images: bool,
     images_dir: str,
     refresh: bool,
+    embed_images: bool = False,
 ) -> list[dict[str, str | None]]:
     # Convert raw rows into HTML-ready rows (adds <img> and link columns).
     html_rows: list[dict[str, str | None]] = []
-    for row in rows:
+    total = len(rows)
+    for idx, row in enumerate(rows, 1):
         local_img = None
         if download_images:
             local_img = download_image(
                 session, row.get("ImageURL") or "", images_dir, refresh
             )
 
-        img_src = local_img or row.get("ImageURL") or ""
+        # Embed as base64 thumbnail if requested
+        if embed_images:
+            # Try local image first, then fetch from URL
+            img_url = row.get("ImageURL") or ""
+            if idx == 1 or idx % 100 == 0 or idx == total:
+                print(f"\r  Embedding images: {idx}/{total}", end="", flush=True)
+            img_src = (
+                image_to_base64_thumbnail(local_img, session) if local_img else None
+            ) or image_to_base64_thumbnail(img_url, session) or img_url
+        else:
+            img_src = local_img or row.get("ImageURL") or ""
         full_img = row.get("ImageURL") or ""
         row_html = dict(row)
         # Make image clickable to open full-size version
@@ -1580,6 +1638,8 @@ def build_html_rows(
         )
         html_rows.append(row_html)
 
+    if embed_images and total > 0:
+        print()  # Newline after progress
     return html_rows
 
 
@@ -1644,6 +1704,7 @@ def save_collection(
     images_dir: str,
     download_images: bool,
     refresh: bool,
+    embed_images: bool = False,
 ) -> None:
     """Save the collection to HTML and CSV files."""
     html_rows = build_html_rows(
@@ -1652,6 +1713,7 @@ def save_collection(
         download_images=download_images,
         images_dir=images_dir,
         refresh=refresh,
+        embed_images=embed_images,
     )
     render_html(html_rows, html_path, "Squishmallowdex", logo_path=LOGO_PATH)
     write_csv(rows, csv_path)
@@ -1710,6 +1772,11 @@ def main() -> None:
         "--no-download-images",
         action="store_true",
         help="Skip downloading pictures (faster, uses less space).",
+    )
+    collect.add_argument(
+        "--embed-images",
+        action="store_true",
+        help="Embed images in HTML as thumbnails (self-contained, ~30-50MB file).",
     )
     collect.add_argument(
         "--stats-only",
@@ -1860,6 +1927,15 @@ def main() -> None:
             log.warn("No Squishmallows collected yet! Run without --stats-only to start catching.")
         else:
             log.info(f"Found {len(rows)} Squishmallows in your collection!")
+            # Regenerate HTML (especially useful with --embed-images)
+            save_collection(
+                rows, session,
+                html_path=args.out, csv_path=args.csv,
+                images_dir=args.images_dir,
+                download_images=not args.no_download_images,
+                refresh=args.refresh,
+                embed_images=args.embed_images,
+            )
             log.summary(len(rows), existing_count, csv_path=args.csv, html_path=args.out)
         log.close_log()
         return
@@ -1959,6 +2035,7 @@ def main() -> None:
                     images_dir=args.images_dir,
                     download_images=not args.no_download_images,
                     refresh=args.refresh,
+                    embed_images=args.embed_images,
                 )
                 log.info(f"Saved! {len(rows)} total Squishmallows in {args.out}", 0)
 
@@ -1985,6 +2062,7 @@ def main() -> None:
         images_dir=args.images_dir,
         download_images=not args.no_download_images,
         refresh=args.refresh,
+        embed_images=args.embed_images,
     )
 
     log.debug(f"Wrote HTML to {args.out}")
