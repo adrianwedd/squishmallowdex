@@ -538,7 +538,8 @@ class AdventureLog:
             self._print(self._c("yellow", "    🔥 THE PHOENIX RISES! YOUR COLLECTION IS LEGENDARY! 🔥\n"))
 
     def summary(self, total_rows: int, existing_count: int, total_available: int = 0,
-                 skipped_count: int = 0, csv_path: str = "", html_path: str = "") -> None:
+                 skipped_count: int = 0, csv_path: str = "", html_path: str = "",
+                 dry_run: bool = False) -> None:
         """Print the epic summary at the end!"""
         elapsed = time.time() - self.start_time
         mins, secs = divmod(int(elapsed), 60)
@@ -548,14 +549,21 @@ class AdventureLog:
         collected_all = total_valid > 0 and total_rows >= total_valid
 
         self._print("")
-        self._print(self._c("pink", "    SQUISHMALLOWDEX BATCH COMPLETE!"))
+        if dry_run:
+            self._print(self._c("pink", "    SQUISHMALLOWDEX DRY RUN COMPLETE!"))
+        else:
+            self._print(self._c("pink", "    SQUISHMALLOWDEX BATCH COMPLETE!"))
         self._print("")
 
         # ─── Run Stats ───
         self._print(self._c("purple", "    ─── Run Stats ───"))
-        self._print(f"    Total collected:      {self._c('bold', str(total_rows))}")
-        self._print(f"    New this run:         {self._c('green', str(self.new_catches))}")
-        self._print(f"    Already had:          {existing_count}")
+        if dry_run:
+            self._print(f"    Would collect:        {self._c('green', str(self.new_catches))}")
+            self._print(f"    Already have:         {existing_count}")
+        else:
+            self._print(f"    Total collected:      {self._c('bold', str(total_rows))}")
+            self._print(f"    New this run:         {self._c('green', str(self.new_catches))}")
+            self._print(f"    Already had:          {existing_count}")
         self._print(f"    Skipped:              {self.skipped}")
         if self.errors:
             self._print(f"    Errors:               {self._c('red', str(self.errors))}")
@@ -2126,11 +2134,11 @@ def main() -> None:
             try:
                 # In dry-run mode, skip fetching entirely (no network, no cache writes)
                 if args.dry_run:
-                    log.debug(f"[DRY RUN] Would fetch: {u.split('/')[-1]}")
+                    log.info(f"  [DRY RUN] Would fetch: {u.split('/')[-1]}", 0)
                     log.new_catches += 1
                     collected_in_batch += 1
                     if collected_in_batch >= args.batch_size:
-                        log.debug(f"[DRY RUN] Would save batch {batch_number}")
+                        log.info(f"  [DRY RUN] Would save batch {batch_number}", 0)
                         batch_number += 1
                         collected_in_batch = 0
                     continue
@@ -2220,7 +2228,8 @@ def main() -> None:
 
         # Show the epic summary!
         log.summary(len(rows), existing_count, total_available=len(urls),
-                    skipped_count=len(skipped_urls), csv_path=args.csv, html_path=args.out)
+                    skipped_count=len(skipped_urls), csv_path=args.csv, html_path=args.out,
+                    dry_run=args.dry_run)
     finally:
         if session is not None:
             session.close()
