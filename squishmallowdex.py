@@ -30,9 +30,11 @@ try:
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
+if HAS_PIL:
+    PIL_RESAMPLING = getattr(Image, "Resampling", Image).LANCZOS
 from dataclasses import dataclass, field
 from html import escape
-from typing import TextIO
+from typing import ClassVar, TextIO
 from urllib.parse import quote, urljoin, urlparse
 
 import requests
@@ -102,6 +104,7 @@ class AdventureLog:
 
     # Fun celebration milestones
     MILESTONES = [10, 25, 50, 100, 150, 200, 250, 300, 400, 500, 750, 1000]
+    _ANSI_PATTERN: ClassVar[re.Pattern] = re.compile(r"\033\[[0-9;]*m")
 
     # Educational facts shown during download
     DID_YOU_KNOW = [
@@ -333,7 +336,7 @@ class AdventureLog:
 
     def _strip_ansi(self, text: str) -> str:
         """Remove ANSI color codes for file logging."""
-        return re.sub(r'\033\[[0-9;]*m', '', text)
+        return self._ANSI_PATTERN.sub("", text)
 
     def _log_to_file(self, text: str) -> None:
         """Write a line to the log file (without colors)."""
@@ -946,6 +949,14 @@ def download_image(
     return path
 
 
+def _get_cached_image_path(images_dir: str, url: str) -> str:
+    """Return the expected cache path for an image URL."""
+    ext = os.path.splitext(urlparse(url).path)[1].lower()
+    if ext not in (".jpg", ".jpeg", ".png", ".webp", ".gif"):
+        ext = ".jpg"
+    return os.path.join(images_dir, f"{_sha1(url)}{ext}")
+
+
 def image_to_base64_thumbnail(
     image_source: str, session: requests.Session | None = None, max_size: int = 100
 ) -> str | None:
@@ -975,18 +986,21 @@ def image_to_base64_thumbnail(
             if img.mode in ("RGBA", "P"):
                 img = img.convert("RGB")
             # Resize maintaining aspect ratio
-            img.thumbnail((max_size, max_size), Image.LANCZOS)
+            img.thumbnail((max_size, max_size), PIL_RESAMPLING)
             # Save to bytes as JPEG
             buffer = BytesIO()
             img.save(buffer, format="JPEG", quality=60)
             b64 = base64.b64encode(buffer.getvalue()).decode("ascii")
             return f"data:image/jpeg;base64,{b64}"
-    except Exception:
+    except Exception as e:
+        if log.verbose >= 2:
+            log.debug(f"Image processing failed for {image_source}: {e}")
         return None
 
 
 def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, logo_path: str = "") -> None:
     # Render a self-contained HTML page with search, sorting, and column picker.
+    html_columns = {"Image", "Page"}
     columns = [
         "♥",        # Favourite (heart)
         "Own",      # I own this
@@ -1029,6 +1043,8 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
                 cells.append(f'<td data-col="{i}"><input type="checkbox" class="own-cb" data-id="{row_id}" aria-label="I own this"></td>')
             else:
                 val = row.get(col) or ""
+                if col not in html_columns:
+                    val = escape(str(val))
                 cells.append(f'<td data-col="{i}">{val}</td>')
         body_rows.append(f'<tr data-id="{row_id}">{"".join(cells)}</tr>')
 
@@ -1604,15 +1620,17 @@ def build_html_rows(
     total = len(rows)
     for idx, row in enumerate(rows, 1):
         local_img = None
-        if download_images:
-            local_img = download_image(
-                session, row.get("ImageURL") or "", images_dir, refresh
-            )
+        img_url = row.get("ImageURL") or ""
+        if img_url:
+            cached_path = _get_cached_image_path(images_dir, img_url)
+            if os.path.exists(cached_path) and not refresh:
+                local_img = cached_path
+            elif download_images:
+                local_img = download_image(session, img_url, images_dir, refresh)
 
         # Embed as base64 thumbnail if requested
         if embed_images:
             # Try local image first, then fetch from URL
-            img_url = row.get("ImageURL") or ""
             if idx == 1 or idx % 100 == 0 or idx == total:
                 print(f"\r  Embedding images: {idx}/{total}", end="", flush=True)
             img_src = (
@@ -1693,6 +1711,15 @@ def append_progress(progress_path: str, url: str) -> None:
     # Append a single URL so we can resume without repeating work.
     with open(progress_path, "a", encoding="utf-8") as f:
         f.write(url + "\n")
+
+
+def _sync_progress_file(progress_path: str) -> None:
+    """Ensure progress file is flushed to disk."""
+    if not os.path.exists(progress_path):
+        return
+    with open(progress_path, "a") as f:
+        f.flush()
+        os.fsync(f.fileno())
 
 
 def save_collection(
@@ -1892,143 +1919,44 @@ def main() -> None:
         log_file=args.log,
     )
 
-    # Open log file for this session
-    log.open_log()
+    session = None
+    try:
+        # Open log file for this session
+        log.open_log()
 
-    # Show the awesome banner!
-    log.banner()
+        # Show the awesome banner!
+        log.banner()
 
-    # A Session keeps connections open between requests (faster + nicer).
-    session = requests.Session()
+        # A Session keeps connections open between requests (faster + nicer).
+        session = requests.Session()
 
-    # Handle --rebuild: clear progress to re-process all cached pages
-    if args.rebuild:
-        log.info("Rebuild mode: clearing progress files to re-process from cache...", 0)
-        skipped_file = skipped_file_path(args.progress_file)
-        for f in [args.progress_file, skipped_file]:
-            if os.path.exists(f):
-                os.remove(f)
+        # Handle --rebuild: clear progress to re-process all cached pages
+        if args.rebuild:
+            log.info("Rebuild mode: clearing progress files to re-process from cache...", 0)
+            skipped_file = skipped_file_path(args.progress_file)
+            for f in [args.progress_file, skipped_file]:
+                if os.path.exists(f):
+                    os.remove(f)
 
-    # Load any existing CSV so we can resume without losing progress.
-    # In rebuild mode, we start fresh.
-    rows: list[dict[str, str | None]] = [] if args.rebuild else read_existing_csv(args.csv)
-    existing_count = len(rows)
+        # Load any existing CSV so we can resume without losing progress.
+        # In rebuild mode, we start fresh.
+        rows: list[dict[str, str | None]] = [] if args.rebuild else read_existing_csv(args.csv)
+        existing_count = len(rows)
 
-    # Track stats for existing rows
-    for row in rows:
-        log.track_squish(row)
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # STATS-ONLY MODE: Just show what we have and exit
-    # ─────────────────────────────────────────────────────────────────────────
-    if args.stats_only:
-        log.step("Checking your collection...")
-        if not rows:
-            log.warn("No Squishmallows collected yet! Run without --stats-only to start catching.")
-        else:
-            log.info(f"Found {len(rows)} Squishmallows in your collection!")
-            # Regenerate HTML (especially useful with --embed-images)
-            save_collection(
-                rows, session,
-                html_path=args.out, csv_path=args.csv,
-                images_dir=args.images_dir,
-                download_images=not args.no_download_images,
-                refresh=args.refresh,
-                embed_images=args.embed_images,
-            )
-            log.summary(len(rows), existing_count, csv_path=args.csv, html_path=args.out)
-        log.close_log()
-        return
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # COLLECTION MODE: Let's catch some Squishmallows!
-    # ─────────────────────────────────────────────────────────────────────────
-    log.step("Step 1: Fetching the Master List of all Squishmallows...")
-
-    if log.adventure_mode:
-        log.info("The Master List is like a treasure map - it shows us where all the Squishmallows are!", 0)
-
-    master_html = fetch(
-        MASTER_LIST, session, cache_dir=args.cache, refresh=args.refresh, delay=args.delay
-    )
-    urls = extract_master_list_urls(master_html)
-
-    log.info(f"Found {len(urls)} potential Squishmallow pages to explore!", 0)
-
-    # The progress file tracks which URLs we've already finished so we can skip them.
-    processed_urls = read_progress(args.progress_file)
-    skipped_file = skipped_file_path(args.progress_file)
-    skipped_urls = read_progress(skipped_file)
-
-    # If we have prior rows but no progress file, rebuild progress from CSV.
-    if rows and not processed_urls:
-        log.info("Rebuilding progress from existing CSV...", 1)
-        processed_urls = {r.get("URL", "") for r in rows if r.get("URL")}
-        # Write all at once instead of appending one by one (avoids duplicates)
-        with open(args.progress_file, "w", encoding="utf-8") as f:
-            for url in sorted(processed_urls):
-                f.write(url + "\n")
-
-    if existing_count > 0:
-        log.info(f"Resuming collection! You already have {existing_count} Squishmallows.", 0)
-
-    log.step("Step 2: Hunting for Squishmallows!")
-
-    if log.adventure_mode:
-        log.info("Each page we visit might contain a new friend for your collection!", 0)
-
-    collected_in_batch = 0
-    batch_number = 1
-    limit = args.limit if args.limit and args.limit > 0 else None
-
-    # Count how many we need to process
-    urls_to_process = [u for u in urls if u not in processed_urls and u not in skipped_urls]
-    if limit:
-        # Limit means "process this many more", not "have this many total"
-        remaining_to_catch = min(limit, len(urls_to_process))
-    else:
-        remaining_to_catch = len(urls_to_process)
-
-    if remaining_to_catch <= 0:
-        log.info("Your collection is already complete! Nothing new to catch.", 0)
-    else:
-        log.info(f"About to hunt for up to {remaining_to_catch} new Squishmallows...", 0)
-
-    for u in urls:
-        # Skip already processed or known non-character pages
-        if u in processed_urls or u in skipped_urls:
-            continue
-        if limit is not None and log.new_catches >= limit:
-            log.info(f"Reached your limit of {limit} new Squishmallows!", 0)
-            break
-
-        try:
-            # Fetch and parse a single page.
-            page_html = fetch(
-                u, session, cache_dir=args.cache, refresh=args.refresh, delay=args.delay
-            )
-            row, info = parse_squish_page(page_html, u)
-
-            # Skip pages that look like lists or meta pages.
-            if not is_character_page(row.get("Name"), info):
-                log.skip(row.get("Name") or u.split("/")[-1], "not a character page")
-                # FIX: Record skipped URLs so we don't re-parse them next time
-                skipped_urls.add(u)
-                append_progress(skipped_file, u)
-                continue
-
-            rows.append(row)
+        # Track stats for existing rows
+        for row in rows:
             log.track_squish(row)
-            processed_urls.add(u)
-            append_progress(args.progress_file, u)
-            collected_in_batch += 1
 
-            # Celebrate the catch!
-            log.catch(row.get("Name") or "Unknown", len(rows))
-
-            # When we hit a batch boundary, write outputs and pause briefly.
-            if collected_in_batch >= args.batch_size:
-                log.step(f"Batch {batch_number} complete! Saving your progress...")
+        # ─────────────────────────────────────────────────────────────────────────
+        # STATS-ONLY MODE: Just show what we have and exit
+        # ─────────────────────────────────────────────────────────────────────────
+        if args.stats_only:
+            log.step("Checking your collection...")
+            if not rows:
+                log.warn("No Squishmallows collected yet! Run without --stats-only to start catching.")
+            else:
+                log.info(f"Found {len(rows)} Squishmallows in your collection!")
+                # Regenerate HTML (especially useful with --embed-images)
                 save_collection(
                     rows, session,
                     html_path=args.out, csv_path=args.csv,
@@ -2037,43 +1965,148 @@ def main() -> None:
                     refresh=args.refresh,
                     embed_images=args.embed_images,
                 )
-                log.info(f"Saved! {len(rows)} total Squishmallows in {args.out}", 0)
+                log.summary(len(rows), existing_count, csv_path=args.csv, html_path=args.out)
+            return
 
-                if log.adventure_mode:
-                    log.info("Taking a short break to be nice to the server... 🍵", 0)
+        # ─────────────────────────────────────────────────────────────────────────
+        # COLLECTION MODE: Let's catch some Squishmallows!
+        # ─────────────────────────────────────────────────────────────────────────
+        log.step("Step 1: Fetching the Master List of all Squishmallows...")
 
-                batch_number += 1
-                collected_in_batch = 0
-                time.sleep(args.batch_delay)
+        if log.adventure_mode:
+            log.info("The Master List is like a treasure map - it shows us where all the Squishmallows are!", 0)
 
-        except KeyboardInterrupt:
-            log.warn("Stopping early! Don't worry, your progress is saved.")
-            break
-        except Exception as exc:
-            log.error(f"Problem with {u.split('/')[-1]}: {exc}")
-            log.debug(f"Full error: {type(exc).__name__}: {exc}")
+        master_html = fetch(
+            MASTER_LIST, session, cache_dir=args.cache, refresh=args.refresh, delay=args.delay
+        )
+        urls = extract_master_list_urls(master_html)
 
-    # Final write for any leftover rows (last partial batch).
-    log.step("Step 3: Saving your Squishmallowdex!")
+        log.info(f"Found {len(urls)} potential Squishmallow pages to explore!", 0)
 
-    save_collection(
-        rows, session,
-        html_path=args.out, csv_path=args.csv,
-        images_dir=args.images_dir,
-        download_images=not args.no_download_images,
-        refresh=args.refresh,
-        embed_images=args.embed_images,
-    )
+        # The progress file tracks which URLs we've already finished so we can skip them.
+        processed_urls = read_progress(args.progress_file)
+        skipped_file = skipped_file_path(args.progress_file)
+        skipped_urls = read_progress(skipped_file)
 
-    log.debug(f"Wrote HTML to {args.out}")
-    log.debug(f"Wrote CSV to {args.csv}")
+        # If we have prior rows but no progress file, rebuild progress from CSV.
+        if rows and not processed_urls:
+            log.info("Rebuilding progress from existing CSV...", 1)
+            processed_urls = {r.get("URL", "") for r in rows if r.get("URL")}
+            # Write all at once instead of appending one by one (avoids duplicates)
+            with open(args.progress_file, "w", encoding="utf-8") as f:
+                for url in sorted(processed_urls):
+                    f.write(url + "\n")
 
-    # Show the epic summary!
-    log.summary(len(rows), existing_count, total_available=len(urls),
-                skipped_count=len(skipped_urls), csv_path=args.csv, html_path=args.out)
+        if existing_count > 0:
+            log.info(f"Resuming collection! You already have {existing_count} Squishmallows.", 0)
 
-    # Close the log file
-    log.close_log()
+        log.step("Step 2: Hunting for Squishmallows!")
+
+        if log.adventure_mode:
+            log.info("Each page we visit might contain a new friend for your collection!", 0)
+
+        collected_in_batch = 0
+        batch_number = 1
+        limit = args.limit if args.limit and args.limit > 0 else None
+
+        # Count how many we need to process
+        urls_to_process = [u for u in urls if u not in processed_urls and u not in skipped_urls]
+        if limit:
+            # Limit means "process this many more", not "have this many total"
+            remaining_to_catch = min(limit, len(urls_to_process))
+        else:
+            remaining_to_catch = len(urls_to_process)
+
+        if remaining_to_catch <= 0:
+            log.info("Your collection is already complete! Nothing new to catch.", 0)
+        else:
+            log.info(f"About to hunt for up to {remaining_to_catch} new Squishmallows...", 0)
+
+        for u in urls:
+            # Skip already processed or known non-character pages
+            if u in processed_urls or u in skipped_urls:
+                continue
+            if limit is not None and log.new_catches >= limit:
+                log.info(f"Reached your limit of {limit} new Squishmallows!", 0)
+                break
+
+            try:
+                # Fetch and parse a single page.
+                page_html = fetch(
+                    u, session, cache_dir=args.cache, refresh=args.refresh, delay=args.delay
+                )
+                row, info = parse_squish_page(page_html, u)
+
+                # Skip pages that look like lists or meta pages.
+                if not is_character_page(row.get("Name"), info):
+                    log.skip(row.get("Name") or u.split("/")[-1], "not a character page")
+                    # FIX: Record skipped URLs so we don't re-parse them next time
+                    skipped_urls.add(u)
+                    append_progress(skipped_file, u)
+                    continue
+
+                rows.append(row)
+                log.track_squish(row)
+                processed_urls.add(u)
+                append_progress(args.progress_file, u)
+                collected_in_batch += 1
+
+                # Celebrate the catch!
+                log.catch(row.get("Name") or "Unknown", len(rows))
+
+                # When we hit a batch boundary, write outputs and pause briefly.
+                if collected_in_batch >= args.batch_size:
+                    log.step(f"Batch {batch_number} complete! Saving your progress...")
+                    save_collection(
+                        rows, session,
+                        html_path=args.out, csv_path=args.csv,
+                        images_dir=args.images_dir,
+                        download_images=not args.no_download_images,
+                        refresh=args.refresh,
+                        embed_images=args.embed_images,
+                    )
+                    _sync_progress_file(args.progress_file)
+                    _sync_progress_file(skipped_file)
+                    log.info(f"Saved! {len(rows)} total Squishmallows in {args.out}", 0)
+
+                    if log.adventure_mode:
+                        log.info("Taking a short break to be nice to the server... 🍵", 0)
+
+                    batch_number += 1
+                    collected_in_batch = 0
+                    time.sleep(args.batch_delay)
+
+            except KeyboardInterrupt:
+                log.warn("Stopping early! Don't worry, your progress is saved.")
+                break
+            except Exception as exc:
+                log.error(f"Problem with {u.split('/')[-1]}: {exc}")
+                log.debug(f"Full error: {type(exc).__name__}: {exc}")
+
+        # Final write for any leftover rows (last partial batch).
+        log.step("Step 3: Saving your Squishmallowdex!")
+
+        save_collection(
+            rows, session,
+            html_path=args.out, csv_path=args.csv,
+            images_dir=args.images_dir,
+            download_images=not args.no_download_images,
+            refresh=args.refresh,
+            embed_images=args.embed_images,
+        )
+        _sync_progress_file(args.progress_file)
+        _sync_progress_file(skipped_file)
+
+        log.debug(f"Wrote HTML to {args.out}")
+        log.debug(f"Wrote CSV to {args.csv}")
+
+        # Show the epic summary!
+        log.summary(len(rows), existing_count, total_available=len(urls),
+                    skipped_count=len(skipped_urls), csv_path=args.csv, html_path=args.out)
+    finally:
+        if session is not None:
+            session.close()
+        log.close_log()
 
 
 if __name__ == "__main__":
