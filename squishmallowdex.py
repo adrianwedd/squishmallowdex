@@ -2134,11 +2134,11 @@ def main() -> None:
             try:
                 # In dry-run mode, skip fetching entirely (no network, no cache writes)
                 if args.dry_run:
-                    log.info(f"  [DRY RUN] Would fetch: {u.split('/')[-1]}", 0)
+                    log.info(f"[DRY RUN] Would fetch: {u.split('/')[-1]}", 0)
                     log.new_catches += 1
                     collected_in_batch += 1
                     if collected_in_batch >= args.batch_size:
-                        log.info(f"  [DRY RUN] Would save batch {batch_number}", 0)
+                        log.info(f"[DRY RUN] Would save batch {batch_number}", 0)
                         batch_number += 1
                         collected_in_batch = 0
                     continue
