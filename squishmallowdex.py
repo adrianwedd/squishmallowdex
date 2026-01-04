@@ -12,6 +12,7 @@ This script is written to be friendly for learning and tinkering.
 
 from __future__ import annotations
 
+# Standard library
 import argparse
 import base64
 import csv
@@ -23,22 +24,44 @@ import re
 import sys
 import time
 from collections import Counter
+from dataclasses import dataclass, field
+from html import escape
 from io import BytesIO
+from typing import ClassVar, TextIO
+from urllib.parse import quote, urljoin, urlparse
 
+# Third-party
+import requests
+from bs4 import BeautifulSoup
+
+# Optional third-party (with graceful fallback)
 try:
     from PIL import Image
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
+
 if HAS_PIL:
     PIL_RESAMPLING = getattr(Image, "Resampling", Image).LANCZOS
-from dataclasses import dataclass, field
-from html import escape
-from typing import ClassVar, TextIO
-from urllib.parse import quote, urljoin, urlparse
 
-import requests
-from bs4 import BeautifulSoup
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ⚙️ CONFIGURATION CONSTANTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Request timeouts (seconds)
+DEFAULT_PAGE_TIMEOUT = 30     # Timeout for page fetches
+DEFAULT_IMAGE_TIMEOUT = 15    # Timeout for image fetches
+
+# Delays between requests (seconds) - be polite to servers!
+DEFAULT_REQUEST_DELAY = 1.2   # Delay between individual requests
+DEFAULT_BATCH_DELAY = 5.0     # Extra delay between batches
+
+# Batch processing
+DEFAULT_BATCH_SIZE = 10       # Save progress every N catches
+
+# Image settings
+DEFAULT_THUMB_SIZE = 100      # Thumbnail size in pixels
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -659,7 +682,11 @@ class AdventureLog:
             self.show_phoenix()
 
 
-# Global logger instance (set up in main)
+# Global logger instance.
+# This is intentionally global to simplify function signatures throughout the codebase.
+# The AdventureLog handles both console output and file logging, and is configured
+# once in main() based on CLI arguments. Thread safety is not a concern as this
+# script runs single-threaded.
 log: AdventureLog = AdventureLog()
 
 BASE = "https://squishmallowsquad.fandom.com"
@@ -727,7 +754,7 @@ def fetch(
     log.debug(f"Full URL: {url}")
 
     # Network call: keep a short timeout so we don't hang forever.
-    resp = session.get(url, headers=HEADERS, timeout=30)
+    resp = session.get(url, headers=HEADERS, timeout=DEFAULT_PAGE_TIMEOUT)
     resp.raise_for_status()
     content = resp.content
 
@@ -925,7 +952,7 @@ def download_image(
         return path
 
     # Image fetch: keep timeout short so a single broken image doesn't stall.
-    resp = session.get(url, headers=HEADERS, timeout=30)
+    resp = session.get(url, headers=HEADERS, timeout=DEFAULT_PAGE_TIMEOUT)
     resp.raise_for_status()
     content = resp.content
 
@@ -972,7 +999,7 @@ def image_to_base64_thumbnail(
         if image_source.startswith(("http://", "https://")):
             if session is None:
                 return None
-            resp = session.get(image_source, timeout=15)
+            resp = session.get(image_source, timeout=DEFAULT_IMAGE_TIMEOUT)
             if resp.status_code != 200:
                 return None
             img = Image.open(BytesIO(resp.content))
@@ -998,8 +1025,18 @@ def image_to_base64_thumbnail(
         return None
 
 
-def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, logo_path: str = "") -> None:
+def render_html(
+    rows: list[dict[str, str | None]],
+    out_path: str,
+    title: str,
+    logo_path: str = "",
+    thumb_size: int = DEFAULT_THUMB_SIZE,
+) -> None:
     # Render a self-contained HTML page with search, sorting, and column picker.
+    # Calculate responsive thumbnail sizes (proportional scaling for smaller screens)
+    thumb_size_768 = int(thumb_size * 0.78)  # ~78% for tablets
+    thumb_size_480 = int(thumb_size * 0.67)  # ~67% for mobile
+
     html_columns = {"Image", "Page"}
     columns = [
         "♥",        # Favourite (heart)
@@ -1252,8 +1289,8 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
     background: #e0f7fa;
   }}
   img.thumb {{
-    width: 72px;
-    height: 72px;
+    width: {thumb_size}px;
+    height: {thumb_size}px;
     object-fit: cover;
     border-radius: 12px;
     border: 2px solid #80deea;
@@ -1344,8 +1381,8 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
       font-size: 14px;
     }}
     img.thumb {{
-      width: 56px;
-      height: 56px;
+      width: {thumb_size_768}px;
+      height: {thumb_size_768}px;
     }}
     td[data-col="10"] {{
       max-width: 200px;
@@ -1361,8 +1398,8 @@ def render_html(rows: list[dict[str, str | None]], out_path: str, title: str, lo
       font-size: 13px;
     }}
     img.thumb {{
-      width: 48px;
-      height: 48px;
+      width: {thumb_size_480}px;
+      height: {thumb_size_480}px;
     }}
     .heart-btn {{
       font-size: 18px;
@@ -1614,6 +1651,7 @@ def build_html_rows(
     images_dir: str,
     refresh: bool,
     embed_images: bool = False,
+    thumb_size: int = DEFAULT_THUMB_SIZE,
 ) -> list[dict[str, str | None]]:
     # Convert raw rows into HTML-ready rows (adds <img> and link columns).
     html_rows: list[dict[str, str | None]] = []
@@ -1634,8 +1672,8 @@ def build_html_rows(
             if idx == 1 or idx % 100 == 0 or idx == total:
                 print(f"\r  Embedding images: {idx}/{total}", end="", flush=True)
             img_src = (
-                image_to_base64_thumbnail(local_img, session) if local_img else None
-            ) or image_to_base64_thumbnail(img_url, session) or img_url
+                image_to_base64_thumbnail(local_img, session, max_size=thumb_size) if local_img else None
+            ) or image_to_base64_thumbnail(img_url, session, max_size=thumb_size) or img_url
         else:
             img_src = local_img or row.get("ImageURL") or ""
         full_img = row.get("ImageURL") or ""
@@ -1687,6 +1725,12 @@ def write_csv(rows: list[dict[str, str | None]], out_path: str) -> None:
             writer.writerow(row)
 
 
+def write_json(rows: list[dict[str, str | None]], out_path: str) -> None:
+    """Export collection as JSON array."""
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(rows, f, indent=2, ensure_ascii=False)
+
+
 def read_existing_csv(csv_path: str) -> list[dict[str, str | None]]:
     # If a previous run exists, load it so we can keep building on it.
     if not os.path.exists(csv_path):
@@ -1732,18 +1776,33 @@ def save_collection(
     download_images: bool,
     refresh: bool,
     embed_images: bool = False,
+    dry_run: bool = False,
+    thumb_size: int = DEFAULT_THUMB_SIZE,
+    json_path: str | None = None,
 ) -> None:
-    """Save the collection to HTML and CSV files."""
+    """Save the collection to HTML, CSV, and optionally JSON files.
+
+    If dry_run=True, builds the HTML rows (validates logic) but skips writing files.
+    """
     html_rows = build_html_rows(
         rows,
         session,
-        download_images=download_images,
+        download_images=download_images and not dry_run,
         images_dir=images_dir,
         refresh=refresh,
-        embed_images=embed_images,
+        embed_images=embed_images and not dry_run,
+        thumb_size=thumb_size,
     )
-    render_html(html_rows, html_path, "Squishmallowdex", logo_path=LOGO_PATH)
-    write_csv(rows, csv_path)
+    if not dry_run:
+        render_html(html_rows, html_path, "Squishmallowdex", logo_path=LOGO_PATH, thumb_size=thumb_size)
+        write_csv(rows, csv_path)
+        if json_path:
+            write_json(rows, json_path)
+    else:
+        log.debug(f"[DRY RUN] Would write HTML to {html_path}")
+        log.debug(f"[DRY RUN] Would write CSV to {csv_path}")
+        if json_path:
+            log.debug(f"[DRY RUN] Would write JSON to {json_path}")
 
 
 def main() -> None:
@@ -1791,9 +1850,9 @@ def main() -> None:
     collect.add_argument(
         "--batch-size",
         type=int,
-        default=10,
+        default=DEFAULT_BATCH_SIZE,
         metavar="N",
-        help="Save progress every N catches (default: 10).",
+        help=f"Save progress every N catches (default: {DEFAULT_BATCH_SIZE}).",
     )
     collect.add_argument(
         "--no-download-images",
@@ -1806,9 +1865,21 @@ def main() -> None:
         help="Embed images in HTML as thumbnails (self-contained, ~30-50MB file).",
     )
     collect.add_argument(
+        "--thumb-size",
+        type=int,
+        default=DEFAULT_THUMB_SIZE,
+        metavar="PX",
+        help=f"Thumbnail size in pixels (default: {DEFAULT_THUMB_SIZE}).",
+    )
+    collect.add_argument(
         "--stats-only",
         action="store_true",
         help="Just show collection stats, don't download anything new.",
+    )
+    collect.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Simulate run without writing files (preview what would be collected).",
     )
 
     # === Output Options ===
@@ -1824,6 +1895,12 @@ def main() -> None:
         default="squishmallowdex.csv",
         metavar="FILE",
         help="CSV file to create (open in spreadsheet).",
+    )
+    output.add_argument(
+        "--json",
+        default=None,
+        metavar="FILE",
+        help="Export collection as JSON file (optional).",
     )
     output.add_argument(
         "--images-dir",
@@ -1872,16 +1949,16 @@ def main() -> None:
     advanced.add_argument(
         "--delay",
         type=float,
-        default=1.2,
+        default=DEFAULT_REQUEST_DELAY,
         metavar="SEC",
-        help="Wait time between downloads (be nice to servers!).",
+        help=f"Wait time between downloads (default: {DEFAULT_REQUEST_DELAY}s).",
     )
     advanced.add_argument(
         "--batch-delay",
         type=float,
-        default=5.0,
+        default=DEFAULT_BATCH_DELAY,
         metavar="SEC",
-        help="Extra wait time between batches.",
+        help=f"Extra wait time between batches (default: {DEFAULT_BATCH_DELAY}s).",
     )
     advanced.add_argument(
         "--cache",
@@ -1908,6 +1985,10 @@ def main() -> None:
 
     args = ap.parse_args()
 
+    # --dry-run and --stats-only are mutually exclusive
+    if args.dry_run and args.stats_only:
+        ap.error("--dry-run and --stats-only cannot be used together")
+
     # Set up the adventure logger with user's preferences
     log = AdventureLog(
         verbose=0 if args.quiet else args.verbose,
@@ -1926,6 +2007,10 @@ def main() -> None:
 
         # Show the awesome banner!
         log.banner()
+
+        # Dry-run mode indicator
+        if args.dry_run:
+            log.warn("🔍 DRY RUN MODE - No files will be written")
 
         # A Session keeps connections open between requests (faster + nicer).
         session = requests.Session()
@@ -1964,6 +2049,9 @@ def main() -> None:
                     download_images=not args.no_download_images,
                     refresh=args.refresh,
                     embed_images=args.embed_images,
+                    dry_run=args.dry_run,
+                    thumb_size=args.thumb_size,
+                    json_path=args.json,
                 )
                 log.summary(len(rows), existing_count, csv_path=args.csv, html_path=args.out)
             return
@@ -1993,9 +2081,10 @@ def main() -> None:
             log.info("Rebuilding progress from existing CSV...", 1)
             processed_urls = {r.get("URL", "") for r in rows if r.get("URL")}
             # Write all at once instead of appending one by one (avoids duplicates)
-            with open(args.progress_file, "w", encoding="utf-8") as f:
-                for url in sorted(processed_urls):
-                    f.write(url + "\n")
+            if not args.dry_run:
+                with open(args.progress_file, "w", encoding="utf-8") as f:
+                    for url in sorted(processed_urls):
+                        f.write(url + "\n")
 
         if existing_count > 0:
             log.info(f"Resuming collection! You already have {existing_count} Squishmallows.", 0)
@@ -2042,13 +2131,15 @@ def main() -> None:
                     log.skip(row.get("Name") or u.split("/")[-1], "not a character page")
                     # FIX: Record skipped URLs so we don't re-parse them next time
                     skipped_urls.add(u)
-                    append_progress(skipped_file, u)
+                    if not args.dry_run:
+                        append_progress(skipped_file, u)
                     continue
 
                 rows.append(row)
                 log.track_squish(row)
                 processed_urls.add(u)
-                append_progress(args.progress_file, u)
+                if not args.dry_run:
+                    append_progress(args.progress_file, u)
                 collected_in_batch += 1
 
                 # Celebrate the catch!
@@ -2064,9 +2155,13 @@ def main() -> None:
                         download_images=not args.no_download_images,
                         refresh=args.refresh,
                         embed_images=args.embed_images,
+                        dry_run=args.dry_run,
+                        thumb_size=args.thumb_size,
+                        json_path=args.json,
                     )
-                    _sync_progress_file(args.progress_file)
-                    _sync_progress_file(skipped_file)
+                    if not args.dry_run:
+                        _sync_progress_file(args.progress_file)
+                        _sync_progress_file(skipped_file)
                     log.info(f"Saved! {len(rows)} total Squishmallows in {args.out}", 0)
 
                     if log.adventure_mode:
@@ -2084,7 +2179,10 @@ def main() -> None:
                 log.debug(f"Full error: {type(exc).__name__}: {exc}")
 
         # Final write for any leftover rows (last partial batch).
-        log.step("Step 3: Saving your Squishmallowdex!")
+        if args.dry_run:
+            log.step("Step 3: Dry run complete! (no files written)")
+        else:
+            log.step("Step 3: Saving your Squishmallowdex!")
 
         save_collection(
             rows, session,
@@ -2093,12 +2191,17 @@ def main() -> None:
             download_images=not args.no_download_images,
             refresh=args.refresh,
             embed_images=args.embed_images,
+            dry_run=args.dry_run,
+            thumb_size=args.thumb_size,
+            json_path=args.json,
         )
-        _sync_progress_file(args.progress_file)
-        _sync_progress_file(skipped_file)
-
-        log.debug(f"Wrote HTML to {args.out}")
-        log.debug(f"Wrote CSV to {args.csv}")
+        if not args.dry_run:
+            _sync_progress_file(args.progress_file)
+            _sync_progress_file(skipped_file)
+            log.debug(f"Wrote HTML to {args.out}")
+            log.debug(f"Wrote CSV to {args.csv}")
+            if args.json:
+                log.debug(f"Wrote JSON to {args.json}")
 
         # Show the epic summary!
         log.summary(len(rows), existing_count, total_available=len(urls),
