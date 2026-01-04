@@ -952,7 +952,7 @@ def download_image(
         return path
 
     # Image fetch: keep timeout short so a single broken image doesn't stall.
-    resp = session.get(url, headers=HEADERS, timeout=DEFAULT_PAGE_TIMEOUT)
+    resp = session.get(url, headers=HEADERS, timeout=DEFAULT_IMAGE_TIMEOUT)
     resp.raise_for_status()
     content = resp.content
 
@@ -1989,6 +1989,10 @@ def main() -> None:
     if args.dry_run and args.stats_only:
         ap.error("--dry-run and --stats-only cannot be used together")
 
+    # --thumb-size must be positive
+    if args.thumb_size < 1:
+        ap.error("--thumb-size must be a positive integer (minimum 1)")
+
     # Set up the adventure logger with user's preferences
     log = AdventureLog(
         verbose=0 if args.quiet else args.verbose,
@@ -2120,6 +2124,17 @@ def main() -> None:
                 break
 
             try:
+                # In dry-run mode, skip fetching entirely (no network, no cache writes)
+                if args.dry_run:
+                    log.debug(f"[DRY RUN] Would fetch: {u.split('/')[-1]}")
+                    log.new_catches += 1
+                    collected_in_batch += 1
+                    if collected_in_batch >= args.batch_size:
+                        log.debug(f"[DRY RUN] Would save batch {batch_number}")
+                        batch_number += 1
+                        collected_in_batch = 0
+                    continue
+
                 # Fetch and parse a single page.
                 page_html = fetch(
                     u, session, cache_dir=args.cache, refresh=args.refresh, delay=args.delay
