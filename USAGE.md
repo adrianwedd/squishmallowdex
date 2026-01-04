@@ -73,3 +73,47 @@ This creates a ~6-30MB HTML file (depending on collection size) with all images 
 - **Works offline!** View your collection without internet
 - **Add to phone!** Open the HTML file and "Add to Home Screen"
 - **Slow internet?** The program waits between downloads to be polite
+
+---
+
+## Advanced Options
+
+### Preview Mode (--dry-run)
+See what would be collected without making any changes:
+```bash
+python3 squishmallowdex.py --dry-run --limit 100
+```
+
+### Export Formats
+Export your collection in different formats:
+```bash
+# JSON export (for programmers)
+python3 squishmallowdex.py --stats-only --json my_collection.json
+
+# CSV export (default, for spreadsheets)
+python3 squishmallowdex.py --stats-only --csv my_collection.csv
+```
+
+### Thumbnail Size (--thumb-size)
+Control embedded image quality vs file size:
+```bash
+# Smaller thumbnails = smaller HTML file
+python3 squishmallowdex.py --embed-images --thumb-size 50
+
+# Larger thumbnails = better quality when zooming
+python3 squishmallowdex.py --embed-images --thumb-size 150
+```
+
+---
+
+## Running Tests
+
+Install test dependencies:
+```bash
+pip3 install -r requirements-test.txt
+```
+
+Run tests:
+```bash
+python3 -m pytest test_squishmallowdex.py -v
+```

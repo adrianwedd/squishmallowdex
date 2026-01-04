@@ -64,6 +64,15 @@ python3 squishmallowdex.py --limit 0
 
 # Just show your stats
 python3 squishmallowdex.py --stats-only
+
+# Preview what would be collected (no changes made)
+python3 squishmallowdex.py --dry-run --limit 50
+
+# Export as JSON for other tools
+python3 squishmallowdex.py --stats-only --json collection.json
+
+# Create smaller embedded thumbnails (faster, smaller file)
+python3 squishmallowdex.py --stats-only --embed-images --thumb-size 50
 ```
 
 See [Usage Guide](USAGE.md) for more options.
