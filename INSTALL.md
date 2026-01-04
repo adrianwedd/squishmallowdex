@@ -1,55 +1,61 @@
-# Installation Guide
+# Installation Guide (No Terminal Needed)
 
-## Mac / Linux
-
-Python is already installed! Just run:
-
-```bash
-./setup.sh
-```
-
-This checks Python and installs the required packages.
+This guide is for kids and non-tech folks. If you can click, you can do this.
 
 ---
 
-## Windows
+## What You Need
 
-### Step 1: Install Python
-
-1. Go to **https://www.python.org/downloads/**
-2. Click the big yellow **"Download Python"** button
-3. Run the installer
-4. **IMPORTANT:** Check **"Add Python to PATH"** at the bottom!
-5. Click "Install Now"
-
-### Step 2: Install Dependencies
-
-Open Command Prompt (Start → type "cmd" → Enter), go to the folder, and run:
-
-```
-pip3 install requests beautifulsoup4
-```
+- A computer (Mac, Linux, or Windows)
+- Internet connection
+- 5 to 10 minutes
+- Optional: a grown-up or helper for the first setup
 
 ---
 
-## Troubleshooting
+## Mac / Linux (Easy Button)
 
-### "python3 is not recognized" or "command not found"
-- Python isn't installed correctly
-- On Windows, make sure you checked "Add Python to PATH" during installation
+1. Download the project (green **Code** button, then **Download ZIP**)
+2. Unzip it
+3. Open the `squishmallowdex` folder
+4. Right-click **`setup.sh`** and choose **Open With -> Terminal**
+5. A small window will open and install everything
+6. When it says setup is complete, you are done
 
-### "No module named requests" or "No module named bs4"
-- Run: `pip3 install requests beautifulsoup4`
+If your computer asks, choose **Open** or **Run**.
 
-### The pictures aren't showing
-- The first run downloads pictures, which takes time
-- Make sure you're connected to the internet
+---
 
-### Something else went wrong
-- Try running with `--rebuild` to start fresh:
-  ```
-  python3 squishmallowdex.py --rebuild --limit 50
-  ```
+## Windows (Friendly Steps)
 
-### Still stuck?
-- Check the `squishmallow.log` file for error messages
+1. Install Python:
+   - Go to https://www.python.org/downloads/
+   - Click the big **Download Python** button
+   - Run the installer
+   - Check the box that says **Add Python to PATH**
+
+2. Open the `squishmallowdex` folder
+3. Double-click **`setup.bat`**
+
+If `setup.bat` opens as text instead of running, do not panic.
+Just close it and ask a helper to run the setup once for you.
+
+---
+
+## After Setup
+
+You will have:
+
+- `squishmallowdex.html` - your collection page
+- `squishmallowdex.csv` - a spreadsheet copy
+
+Open the HTML file anytime to browse your collection.
+
+---
+
+## Need Extra Help?
+
+- Ask a grown-up or a tech-savvy friend
+- See `USAGE.md` for advanced instructions
+
+You are doing great. Every collector needs a little help on their first quest.

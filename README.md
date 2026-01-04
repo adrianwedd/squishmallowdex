@@ -2,110 +2,77 @@
 
 ![Squishmallowdex Logo](squishmallowdex.png)
 
-**Your Squishmallow collection tracker - like a Pokédex, but for Squishmallows!**
+**Your Squishmallow collection tracker - like a Pokedex, but for Squishmallows!**
 
-Download info on **3000+ Squishmallows** from the wiki and browse your collection offline. Search by name, filter by squad, mark your favourites, and track which ones you own!
-
----
-
-## Features
-
-- 🧸 **Huge Database** - Info on 3000+ Squishmallows with pictures
-- 🔍 **Search & Sort** - Find any squish by name, type, color, or squad
-- ❤️ **Favourites** - Click the heart to mark your faves
-- ✅ **Ownership Tracking** - Check off the ones you actually own
-- 📱 **Mobile Friendly** - Works as an app on your phone (add to home screen)
-- 💾 **Works Offline** - Browse your collection without internet
-- 🎯 **Resume Anytime** - Stop and restart whenever you want
+Welcome to a cozy, colorful collector's guide. Squishmallowdex gathers info from the wiki and turns it into a magical, searchable collection you can open anytime.
 
 ---
 
-## Quick Start
+## What You'll Get
 
-### 1. Download
-
-Click the green **Code** button above → **Download ZIP** → Unzip it
-
-Or grab the latest from [Releases](https://github.com/adrianwedd/squishmallowdex/releases)
-
-### 2. Setup
-
-**Mac / Linux:**
-```bash
-./setup.sh
-```
-
-**Windows:** [See installation guide](INSTALL.md)
-
-### 3. Catch Some Squishmallows
-
-```bash
-python3 squishmallowdex.py --limit 50
-```
-
-Watch as 50 Squishmallows get added to your collection!
-
-### 4. View Your Collection
-
-Open **squishmallowdex.html** in any browser - search, sort, and filter your squish!
-
-You also get **squishmallowdex.csv** if you want to use the data in Excel or Google Sheets.
+- A big, searchable collection with pictures
+- Favourites and ownership tracking (hearts and checkboxes)
+- Works offline after it is built
+- Kid-friendly, easy to browse
 
 ---
 
-## Commands
+## Quick Start (No Terminal Needed)
 
-```bash
-# Catch 50 Squishmallows
-python3 squishmallowdex.py --limit 50
+1. **Download the project**
+   - Click the green **Code** button and choose **Download ZIP**
+2. **Unzip it**
+   - You will see a folder named `squishmallowdex`
+3. **Open the folder**
+4. **Run the setup helper**
+   - On Mac/Linux, **right-click `setup.sh` and choose Open With -> Terminal**
+   - On Windows, **double-click `setup.bat`**
+   - A small window opens and installs everything for you
 
-# Catch ALL of them (takes a while!)
-python3 squishmallowdex.py --limit 0
+If your computer asks, choose **Open** or **Run**. It is safe and only installs what the project needs.
 
-# Just show your stats
-python3 squishmallowdex.py --stats-only
+---
 
-# Preview what would be collected (no changes made)
-python3 squishmallowdex.py --dry-run --limit 50
+## After Setup: Your Collection
 
-# Export as JSON for other tools
-python3 squishmallowdex.py --stats-only --json collection.json
+You will see files like:
 
-# Create smaller embedded thumbnails (faster, smaller file)
-python3 squishmallowdex.py --stats-only --embed-images --thumb-size 50
-```
+- `squishmallowdex.html` - This is your beautiful collection page
+- `squishmallowdex.csv` - A spreadsheet version
 
-See [Usage Guide](USAGE.md) for more options.
+Tip: You can open the HTML file anytime (no internet needed once it is built).
+
+---
+
+## Need Help?
+
+If something does not work:
+
+- Do not worry - take a deep squishy breath
+- Ask a grown-up or a tech-savvy friend for help
+- See the friendly step-by-step in `INSTALL.md`
 
 ---
 
 ## Use on Phone or Tablet
 
-Want to browse your collection on the go? The HTML file is completely self-contained - just one file with everything included!
+Want to browse your collection on the go?
 
-1. Transfer **squishmallowdex.html** to your phone (AirDrop, email, cloud drive, etc.)
-2. Open it in Safari (iPhone) or Chrome (Android)
-3. Tap **Share** → **Add to Home Screen**
+1. Transfer `squishmallowdex.html` to your phone
+2. Open it in Safari or Chrome
+3. Tap **Share** then **Add to Home Screen**
 
-Now you have a Squishmallowdex app on your phone that works offline!
+Now it looks like an app and works offline.
 
 ---
 
 ## Documentation
 
-📖 [Installation Guide](INSTALL.md) - Detailed setup for all platforms
-🎮 [Usage Guide](USAGE.md) - All commands and features
-
----
-
-## Contributing
-
-![Squishy](squishy-readme.png)
-
-Found a bug? Have an idea? Contributions are welcome!
+- [Installation Guide](INSTALL.md)
+- [Usage Guide](USAGE.md) (for grown-ups who like extra knobs)
 
 ---
 
 **Gotta Squish 'Em All!**
 
-*Made with love for young collectors who want to learn coding too!*
+*Made with love for young collectors who want to learn along the way.*
