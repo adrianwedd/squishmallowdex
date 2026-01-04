@@ -1033,19 +1033,7 @@ def image_to_base64_thumbnail(
         return None
 
 
-def render_html(
-    rows: list[dict[str, str | None]],
-    out_path: str,
-    title: str,
-    logo_path: str = "",
-    thumb_size: int = DEFAULT_THUMB_SIZE,
-) -> None:
-    # Render a self-contained HTML page with search, sorting, and column picker.
-    # Calculate responsive thumbnail sizes (proportional scaling for smaller screens)
-    thumb_size_768 = int(thumb_size * 0.78)  # ~78% for tablets
-    thumb_size_480 = int(thumb_size * 0.67)  # ~67% for mobile
-
-    html_columns = {"Image", "Page"}
+def _table_config() -> tuple[list[str], set[str], set[str], set[str]]:
     columns = [
         "♥",        # Favourite (heart)
         "Own",      # I own this
@@ -1060,20 +1048,28 @@ def render_html(
         "Bio",
         "Page",
     ]
-    # Columns hidden by default
     hidden_default = {"Squad", "Size(s)", "Collector Number"}
-    # Columns that shouldn't be sortable
     no_sort = {"♥", "Own", "Image", "Page", "Bio"}
+    html_columns = {"Image", "Page"}
+    return columns, hidden_default, no_sort, html_columns
 
-    # Build header with data attributes for sorting/hiding
+
+def _build_table_header(columns: list[str], hidden_default: set[str], no_sort: set[str]) -> str:
     head_cells = []
     for i, col in enumerate(columns):
         sortable = "true" if col not in no_sort else "false"
         hidden = "true" if col in hidden_default else "false"
-        head_cells.append(f'<th data-col="{i}" data-sortable="{sortable}" data-hidden="{hidden}">{escape(col)}</th>')
-    head = f"<tr>{''.join(head_cells)}</tr>"
+        head_cells.append(
+            f'<th data-col="{i}" data-sortable="{sortable}" data-hidden="{hidden}">{escape(col)}</th>'
+        )
+    return f"<tr>{''.join(head_cells)}</tr>"
 
-    # Build the table body rows with data attributes
+
+def _build_table_body(
+    rows: list[dict[str, str | None]],
+    columns: list[str],
+    html_columns: set[str],
+) -> str:
     body_rows = []
     for row in rows:
         # Use URL hash as unique ID for localStorage
@@ -1082,42 +1078,45 @@ def render_html(
         for i, col in enumerate(columns):
             if col == "♥":
                 # Heart button for favourites
-                cells.append(f'<td data-col="{i}"><button class="heart-btn" data-id="{row_id}" aria-label="Favourite">♡</button></td>')
+                cells.append(
+                    f'<td data-col="{i}"><button class="heart-btn" data-id="{row_id}" aria-label="Favourite">♡</button></td>'
+                )
             elif col == "Own":
                 # Checkbox for "I own this"
-                cells.append(f'<td data-col="{i}"><input type="checkbox" class="own-cb" data-id="{row_id}" aria-label="I own this"></td>')
+                cells.append(
+                    f'<td data-col="{i}"><input type="checkbox" class="own-cb" data-id="{row_id}" aria-label="I own this"></td>'
+                )
             else:
                 val = row.get(col) or ""
                 if col not in html_columns:
                     val = escape(str(val))
                 cells.append(f'<td data-col="{i}">{val}</td>')
         body_rows.append(f'<tr data-id="{row_id}">{"".join(cells)}</tr>')
+    return "".join(body_rows)
 
-    # Load and encode logo if available
-    logo_b64 = ""
-    if logo_path and os.path.exists(logo_path):
-        with open(logo_path, "rb") as f:
-            logo_b64 = base64.b64encode(f.read()).decode("ascii")
 
-    logo_html = f'<img src="data:image/png;base64,{logo_b64}" alt="Squishmallowdex" class="logo"/>' if logo_b64 else ""
+def _load_b64(path: str) -> str:
+    if not path or not os.path.exists(path):
+        return ""
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode("ascii")
 
-    # Load square PWA icons
+
+def _build_logo_html(logo_path: str) -> str:
+    logo_b64 = _load_b64(logo_path)
+    if not logo_b64:
+        return ""
+    return f'<img src="data:image/png;base64,{logo_b64}" alt="Squishmallowdex" class="logo"/>'
+
+
+def _load_pwa_icons(logo_path: str) -> tuple[str, str]:
     script_dir = os.path.dirname(logo_path) if logo_path else "."
-    icon_192_b64 = ""
-    icon_512_b64 = ""
     icon_192_path = os.path.join(script_dir, "icon-192.png")
     icon_512_path = os.path.join(script_dir, "icon-512.png")
-    if os.path.exists(icon_192_path):
-        with open(icon_192_path, "rb") as f:
-            icon_192_b64 = base64.b64encode(f.read()).decode("ascii")
-    if os.path.exists(icon_512_path):
-        with open(icon_512_path, "rb") as f:
-            icon_512_b64 = base64.b64encode(f.read()).decode("ascii")
+    return _load_b64(icon_192_path), _load_b64(icon_512_path)
 
-    # Column config as JSON for JS
-    col_config = json.dumps([{"name": c, "hidden": c in hidden_default, "sortable": c not in no_sort} for c in columns])
 
-    # PWA manifest - URL-encoded for data URI
+def _build_manifest_json(icon_192_b64: str, icon_512_b64: str) -> str:
     pwa_icons = []
     if icon_192_b64:
         pwa_icons.append({"src": f"data:image/png;base64,{icon_192_b64}", "sizes": "192x192", "type": "image/png"})
@@ -1131,23 +1130,13 @@ def render_html(
         "display": "standalone",
         "theme_color": "#00bcd4",
         "background_color": "#ffffff",
-        "icons": pwa_icons
+        "icons": pwa_icons,
     }
-    manifest_json = quote(json.dumps(manifest), safe='')
+    return quote(json.dumps(manifest), safe="")
 
-    # Inline CSS/JS so the page works fully offline.
-    html = f"""<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="apple-mobile-web-app-title" content="Squishmallowdex"/>
-<meta name="theme-color" content="#00bcd4"/>
-<link rel="manifest" href="data:application/json,{manifest_json}"/>
-<title>{escape(title)}</title>
-<style>
+
+def _render_css(thumb_size: int, thumb_size_768: int, thumb_size_480: int) -> str:
+    return f"""
   :root {{
     --ink: #1f1a16;
     --accent: #00bcd4;
@@ -1431,6 +1420,48 @@ def render_html(
     font-size: 13px;
     padding: 8px 16px;
   }}
+"""
+
+
+def render_html(
+    rows: list[dict[str, str | None]],
+    out_path: str,
+    title: str,
+    logo_path: str = "",
+    thumb_size: int = DEFAULT_THUMB_SIZE,
+) -> None:
+    # Render a self-contained HTML page with search, sorting, and column picker.
+    # Calculate responsive thumbnail sizes (proportional scaling for smaller screens)
+    thumb_size_768 = int(thumb_size * 0.78)  # ~78% for tablets
+    thumb_size_480 = int(thumb_size * 0.67)  # ~67% for mobile
+
+    columns, hidden_default, no_sort, html_columns = _table_config()
+    head = _build_table_header(columns, hidden_default, no_sort)
+    body_html = _build_table_body(rows, columns, html_columns)
+    logo_html = _build_logo_html(logo_path)
+    icon_192_b64, icon_512_b64 = _load_pwa_icons(logo_path)
+
+    # Column config as JSON for JS
+    col_config = json.dumps([{"name": c, "hidden": c in hidden_default, "sortable": c not in no_sort} for c in columns])
+
+    # PWA manifest - URL-encoded for data URI
+    manifest_json = _build_manifest_json(icon_192_b64, icon_512_b64)
+    css = _render_css(thumb_size, thumb_size_768, thumb_size_480)
+
+    # Inline CSS/JS so the page works fully offline.
+    html = f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Squishmallowdex"/>
+<meta name="theme-color" content="#00bcd4"/>
+<link rel="manifest" href="data:application/json,{manifest_json}"/>
+<title>{escape(title)}</title>
+<style>
+{css}
 </style>
 </head>
 <body>
@@ -1457,7 +1488,7 @@ def render_html(
   <table id="dex">
     <thead>{head}</thead>
     <tbody>
-      {''.join(body_rows)}
+      {body_html}
     </tbody>
   </table>
 </div>

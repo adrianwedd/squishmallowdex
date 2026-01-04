@@ -11,6 +11,13 @@ import sys
 import tempfile
 from io import StringIO
 
+import requests
+
+try:
+    import responses
+except ImportError:
+    responses = None
+
 # Import the module under test
 import squishmallowdex as sq
 
@@ -459,6 +466,48 @@ class TestConfigurationConstants:
         assert sq.DEFAULT_THUMB_SIZE >= 50
 
 
+class TestFetchCaching:
+    """Tests for fetch caching behavior."""
+
+    def test_fetch_uses_cache(self):
+        if responses is None:
+            return
+        with tempfile.TemporaryDirectory() as tmpdir:
+            url = "https://example.com/page"
+            body = b"<html>test</html>"
+            with responses.RequestsMock() as rsps:
+                rsps.add(responses.GET, url, body=body, status=200)
+                session = requests.Session()
+                try:
+                    first = sq.fetch(url, session, cache_dir=tmpdir, refresh=False, delay=0)
+                    second = sq.fetch(url, session, cache_dir=tmpdir, refresh=False, delay=0)
+                finally:
+                    session.close()
+            assert first == body
+            assert second == body
+            assert len(rsps.calls) == 1
+
+    def test_fetch_refreshes_cache(self):
+        if responses is None:
+            return
+        with tempfile.TemporaryDirectory() as tmpdir:
+            url = "https://example.com/page"
+            body_a = b"<html>first</html>"
+            body_b = b"<html>second</html>"
+            with responses.RequestsMock() as rsps:
+                rsps.add(responses.GET, url, body=body_a, status=200)
+                rsps.add(responses.GET, url, body=body_b, status=200)
+                session = requests.Session()
+                try:
+                    first = sq.fetch(url, session, cache_dir=tmpdir, refresh=False, delay=0)
+                    second = sq.fetch(url, session, cache_dir=tmpdir, refresh=True, delay=0)
+                finally:
+                    session.close()
+            assert first == body_a
+            assert second == body_b
+            assert len(rsps.calls) == 2
+
+
 class TestRemainingToCatchClamping:
     """Tests for the remaining_to_catch calculation."""
 
@@ -508,6 +557,7 @@ def run_tests():
             TestJSONExport,
             TestThumbSize,
             TestConfigurationConstants,
+            TestFetchCaching,
             TestRemainingToCatchClamping,
         ]
 
