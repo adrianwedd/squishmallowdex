@@ -1092,7 +1092,7 @@ def _build_table_body(
                 name = row.get("Name") or ""
                 # Create Amazon search link (will be replaced with ASIN links later)
                 search_query = f"{name} squishmallow".replace(" ", "+")
-                buy_link = f"https://www.amazon.com/s?k={search_query}&tag=squishdex-20"
+                buy_link = f"https://www.amazon.com/s?k={search_query}&tag=adrianwedd-20"
                 cells.append(
                     f'<td data-col="{i}"><a href="{buy_link}" target="_blank" rel="noopener" class="buy-btn" data-id="{row_id}" aria-label="Buy on Amazon">🛒</a></td>'
                 )

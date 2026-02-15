@@ -6,7 +6,7 @@ Set your Amazon Associates affiliate ID here once you're approved.
 
 # Amazon Associates Configuration
 # Get your ID from: https://affiliate-program.amazon.com/
-AMAZON_ASSOCIATE_ID = "squishdex-20"  # Replace with your actual ID after approval
+AMAZON_ASSOCIATE_ID = "adrianwedd-20"  # ✅ Real Amazon Associates ID
 
 # Amazon base URLs by marketplace
 AMAZON_URL_BASE = {
