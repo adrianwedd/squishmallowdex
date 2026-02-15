@@ -1,4 +1,4 @@
-name: Deploy Squishmallowdex to GitHub Pages
+name: Update Squishmallowdex Collection
 
 on:
   schedule:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  deploy:
+  update-collection:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -35,4 +35,8 @@ jobs:
           git config user.email "actions@github.com"
           git add docs/
           git diff --quiet && git diff --staged --quiet || \
-            (git commit -m "🤖 Auto-update Squishmallowdex collection [skip ci]" && git push)
+            (git commit -m "🤖 Auto-update Squishmallowdex collection" && git push)
+
+      - name: Trigger Cloudflare Pages rebuild
+        run: |
+          echo "✅ Changes pushed - Cloudflare Pages will auto-deploy"

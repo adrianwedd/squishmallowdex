@@ -1,0 +1,11 @@
+# Cloudflare Pages Redirects
+
+# Root redirect
+/  /index.html  200
+
+# Clean URLs (optional)
+/collection  /squishmallowdex.html  200
+/browse  /squishmallowdex.html  200
+
+# 404 handling
+/* /404.html 404

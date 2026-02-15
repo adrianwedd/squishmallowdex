@@ -75,20 +75,41 @@ Now it looks like an app and works offline.
 
 ---
 
-## GitHub Pages Deployment
+## 🌐 Live Site - Cloudflare Pages
 
-This project is automatically deployed to GitHub Pages weekly! The live site includes:
+This project is deployed on Cloudflare Pages with automatic builds on every push!
+
+**Live Site:** Coming soon! (Your custom domain here)
+
+The live site includes:
 - 🏠 Landing page with features and stats
 - 📖 Collection browser (3000+ Squishmallows)
 - ℹ️ About page with project details
 - 📚 Interactive usage guide
+- 🚀 Global CDN with edge caching
+- 📊 Privacy-first analytics
 
-**Live URL:** https://adrianwedd.github.io/squishmallows/
+### Deployment Setup
 
-The deployment is automated via GitHub Actions:
-- Runs weekly (Sunday 2am UTC) to update the collection
-- Can be triggered manually from the Actions tab
-- Automatically regenerates and deploys to `/docs` folder
+**Quick Start:** See [CLOUDFLARE_QUICK_START.md](CLOUDFLARE_QUICK_START.md)
+**Full Guide:** See [CLOUDFLARE_SETUP.md](CLOUDFLARE_SETUP.md)
+
+**Build Command:** `bash cloudflare-build.sh`
+**Output Directory:** `/docs`
+
+The collection is automatically updated:
+- ✅ On every push to `main` branch (Cloudflare auto-deploy)
+- ✅ Weekly via GitHub Actions (Sunday 2am UTC)
+- ✅ Manually via Actions tab or Cloudflare dashboard
+
+### Why Cloudflare Pages?
+
+- **Unlimited bandwidth** (no GitHub Pages 100GB limit)
+- **Global CDN** with 300+ locations
+- **Instant deployments** with smart caching
+- **Built-in analytics** (privacy-first)
+- **DDoS protection** included
+- **Free SSL/TLS** certificates
 
 ---
 

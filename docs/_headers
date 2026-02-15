@@ -1,0 +1,25 @@
+# Cloudflare Pages Headers
+
+# Security headers for all pages
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Cache HTML files for 1 hour with revalidation
+/*.html
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# Cache images for 1 year (immutable)
+/squish_images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache assets for 1 year (immutable)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Service worker (no cache)
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate

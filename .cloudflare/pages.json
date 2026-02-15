@@ -1,0 +1,35 @@
+{
+  "build": {
+    "command": "python3 squishmallowdex.py && python3 deploy.py",
+    "destination": "docs",
+    "rootDirectory": ".",
+    "environmentVariables": {
+      "PYTHON_VERSION": "3.11"
+    }
+  },
+  "deployment": {
+    "branchPreview": true,
+    "productionBranch": "main"
+  },
+  "routes": [
+    {
+      "pattern": "/",
+      "custom_page": "index.html"
+    },
+    {
+      "pattern": "/404",
+      "custom_page": "404.html"
+    }
+  ],
+  "headers": {
+    "/*": {
+      "Cache-Control": "public, max-age=3600"
+    },
+    "/squish_images/*": {
+      "Cache-Control": "public, max-age=31536000, immutable"
+    },
+    "/assets/*": {
+      "Cache-Control": "public, max-age=31536000, immutable"
+    }
+  }
+}
