@@ -1037,6 +1037,7 @@ def _table_config() -> tuple[list[str], set[str], set[str], set[str]]:
     columns = [
         "♥",        # Favourite (heart)
         "Own",      # I own this
+        "🛒",        # Buy on Amazon
         "Image",
         "Name",
         "Type",
@@ -1049,7 +1050,7 @@ def _table_config() -> tuple[list[str], set[str], set[str], set[str]]:
         "Page",
     ]
     hidden_default = {"Squad", "Size(s)", "Collector Number"}
-    no_sort = {"♥", "Own", "Image", "Page", "Bio"}
+    no_sort = {"♥", "Own", "🛒", "Image", "Page", "Bio"}
     html_columns = {"Image", "Page"}
     return columns, hidden_default, no_sort, html_columns
 
@@ -1085,6 +1086,15 @@ def _build_table_body(
                 # Checkbox for "I own this"
                 cells.append(
                     f'<td data-col="{i}"><input type="checkbox" class="own-cb" data-id="{row_id}" aria-label="I own this"></td>'
+                )
+            elif col == "🛒":
+                # Buy button for Amazon affiliate link
+                name = row.get("Name") or ""
+                # Create Amazon search link (will be replaced with ASIN links later)
+                search_query = f"{name} squishmallow".replace(" ", "+")
+                buy_link = f"https://www.amazon.com/s?k={search_query}&tag=squishdex-20"
+                cells.append(
+                    f'<td data-col="{i}"><a href="{buy_link}" target="_blank" rel="noopener" class="buy-btn" data-id="{row_id}" aria-label="Buy on Amazon">🛒</a></td>'
                 )
             else:
                 val = row.get(col) or ""
@@ -1326,6 +1336,27 @@ def _render_css(thumb_size: int, thumb_size_768: int, thumb_size_480: int) -> st
     cursor: pointer;
     accent-color: var(--accent);
   }}
+  /* Buy button */
+  .buy-btn {{
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+  }}
+  .buy-btn:hover {{
+    transform: scale(1.1);
+    background: #00a3b8;
+    box-shadow: 0 2px 8px rgba(0, 188, 212, 0.3);
+  }}
+  .buy-btn:active {{
+    transform: scale(0.95);
+  }}
   /* Filter buttons */
   .filters {{
     display: flex;
@@ -1419,6 +1450,37 @@ def _render_css(thumb_size: int, thumb_size_768: int, thumb_size_480: int) -> st
     color: var(--muted);
     font-size: 13px;
     padding: 8px 16px;
+  }}
+  /* Footer */
+  .site-footer {{
+    background: var(--ink);
+    color: white;
+    padding: 24px 20px;
+    margin-top: 40px;
+    text-align: center;
+  }}
+  .ftc-disclosure {{
+    margin: 0 0 12px;
+    font-size: 13px;
+    opacity: 0.9;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }}
+  .ftc-disclosure strong {{
+    color: var(--accent);
+  }}
+  .footer-links {{
+    margin: 0;
+    font-size: 14px;
+  }}
+  .footer-links a {{
+    color: var(--accent);
+    text-decoration: none;
+    margin: 0 8px;
+  }}
+  .footer-links a:hover {{
+    text-decoration: underline;
   }}
 """
 
@@ -1672,8 +1734,35 @@ def render_html(
   search.addEventListener('input', applyFilters);
 
   updateCount();
+
+  // ─── Affiliate Analytics (Privacy-First) ───
+  let buyClicks = {{}};
+  try {{
+    buyClicks = JSON.parse(localStorage.getItem('squishdex-buyclicks') || '{{}}');
+  }} catch(e) {{}}
+
+  document.querySelectorAll('.buy-btn').forEach(btn => {{
+    btn.addEventListener('click', () => {{
+      const id = btn.dataset.id;
+      buyClicks[id] = (buyClicks[id] || 0) + 1;
+      localStorage.setItem('squishdex-buyclicks', JSON.stringify(buyClicks));
+      // Note: No personal data collected, just click counts per item
+    }});
+  }});
 }})();
 </script>
+<footer class="site-footer">
+  <p class="ftc-disclosure">
+    <strong>Affiliate Disclosure:</strong> As an Amazon Associate, we earn from qualifying purchases.
+    When you buy through our links, we may earn a small commission at no extra cost to you.
+    This helps support this free educational project. Thank you! ❤️
+  </p>
+  <p class="footer-links">
+    <a href="about.html">About</a> •
+    <a href="guide.html">Usage Guide</a> •
+    <a href="https://github.com/adrianwedd/squishmallowdex" target="_blank" rel="noopener">GitHub</a>
+  </p>
+</footer>
 </body>
 </html>
 """
