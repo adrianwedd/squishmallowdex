@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Squishmallowdex</title>
+    <meta name="description" content="Learn about the Squishmallowdex project - an educational, kid-friendly Squishmallow collection tracker.">
+    <link rel="stylesheet" href="assets/css/shared.css">
+    <link rel="icon" type="image/png" href="assets/images/icon-192.png">
+    <style>
+        .content-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .content-section h2 {
+            color: var(--accent);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .content-section h3 {
+            color: var(--ink);
+            font-size: 1.5rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .content-section p {
+            color: var(--muted);
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .content-section ul {
+            color: var(--muted);
+            line-height: 1.8;
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .tech-item {
+            background: var(--background);
+            color: white;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+
+        .tech-item strong {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .cta-section {
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--background) 0%, #26a0a8 100%);
+            color: white;
+            border-radius: var(--border-radius);
+            margin-top: 2rem;
+        }
+
+        .cta-section h2 {
+            margin-bottom: 1rem;
+        }
+
+        .cta-section p {
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        @media (max-width: 768px) {
+            .content-section {
+                padding: 1.5rem;
+            }
+
+            .content-section h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container">
+            <a href="index.html" class="site-logo">
+                <img src="assets/images/squishmallowdex.png" alt="Squishmallowdex">
+                <h1>Squishmallowdex</h1>
+            </a>
+            <nav>
+                <ul class="site-nav">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="squishmallowdex.html">Collection</a></li>
+                    <li><a href="about.html" class="active">About</a></li>
+                    <li><a href="guide.html">Guide</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="container">
+            <div class="content-section">
+                <h2>About Squishmallowdex</h2>
+                <p>
+                    Squishmallowdex is your Pokédex for Squishmallows - a cozy, colorful collector's
+                    guide that helps you browse, search, and track your Squishmallow collection.
+                    Like a Pokédex helps trainers catalog Pokémon, Squishmallowdex helps collectors
+                    organize and explore over 3000 adorable Squishmallows!
+                </p>
+                <p>
+                    This project gathers information from the Squishmallows Wiki and transforms it
+                    into a magical, searchable collection you can open anytime - even without an
+                    internet connection.
+                </p>
+            </div>
+
+            <div class="content-section">
+                <h2>Educational Mission</h2>
+                <p>
+                    Squishmallowdex is designed with young collectors and learners in mind. It's
+                    more than just a collection tracker - it's an educational tool that teaches:
+                </p>
+                <ul>
+                    <li><strong>Organization Skills:</strong> Learn to catalog and organize collections systematically</li>
+                    <li><strong>Research & Discovery:</strong> Explore different squads, sizes, and characteristics</li>
+                    <li><strong>Technology Literacy:</strong> Experience how web applications work offline</li>
+                    <li><strong>Privacy & Safety:</strong> Understand local data storage and why we don't track users</li>
+                </ul>
+                <p>
+                    Made with love for young collectors who want to learn along the way!
+                </p>
+            </div>
+
+            <div class="content-section">
+                <h2>Technology Stack</h2>
+                <p>
+                    Squishmallowdex is built using modern web technologies while keeping everything
+                    simple, accessible, and privacy-focused:
+                </p>
+                <div class="tech-stack">
+                    <div class="tech-item">
+                        <strong>Python</strong>
+                        <span>Data collection and HTML generation</span>
+                    </div>
+                    <div class="tech-item">
+                        <strong>Vanilla JS</strong>
+                        <span>No frameworks, just pure JavaScript</span>
+                    </div>
+                    <div class="tech-item">
+                        <strong>PWA</strong>
+                        <span>Progressive Web App for offline use</span>
+                    </div>
+                    <div class="tech-item">
+                        <strong>LocalStorage</strong>
+                        <span>Your data stays on your device</span>
+                    </div>
+                </div>
+                <h3>Why These Choices?</h3>
+                <ul>
+                    <li><strong>No dependencies:</strong> The collection works standalone - just open the HTML file</li>
+                    <li><strong>Privacy-first:</strong> All data stored locally, no tracking, no analytics, no ads</li>
+                    <li><strong>Offline-capable:</strong> Add to home screen and use anywhere, anytime</li>
+                    <li><strong>Educational:</strong> Simple codebase that learners can explore and understand</li>
+                </ul>
+            </div>
+
+            <div class="content-section">
+                <h2>Features</h2>
+                <ul>
+                    <li><strong>3000+ Squishmallows:</strong> Comprehensive database with images and details</li>
+                    <li><strong>Powerful Search:</strong> Find by name, number, size, or squad</li>
+                    <li><strong>Collection Tracking:</strong> Mark your favorites with hearts and track ownership</li>
+                    <li><strong>Sort & Filter:</strong> Organize by name, number, size, or squad</li>
+                    <li><strong>Responsive Design:</strong> Works beautifully on desktop, tablet, and mobile</li>
+                    <li><strong>Kid-Friendly UI:</strong> Colorful, intuitive interface for all ages</li>
+                    <li><strong>No Internet Required:</strong> After initial load, works completely offline</li>
+                </ul>
+            </div>
+
+            <div class="content-section">
+                <h2>Open Source & Community</h2>
+                <p>
+                    Squishmallowdex is an open-source, fan-made project. The code is available on
+                    GitHub for anyone to explore, learn from, or contribute to.
+                </p>
+                <p>
+                    <strong>Disclaimer:</strong> This is an unofficial, educational project created
+                    by fans for fans. Squishmallows is a registered trademark of Kelly Toy Holdings LLC.
+                    All images and information are sourced from the Squishmallows Wiki and used for
+                    educational purposes.
+                </p>
+                <p>
+                    <a href="https://github.com/adrianwedd/squishmallows" target="_blank" class="btn btn-primary">
+                        View on GitHub
+                    </a>
+                </p>
+            </div>
+
+            <div class="content-section">
+                <h2>Credits & Acknowledgments</h2>
+                <p>Special thanks to:</p>
+                <ul>
+                    <li><strong>Squishmallows Wiki:</strong> For maintaining the comprehensive database</li>
+                    <li><strong>Kelly Toy Holdings LLC:</strong> For creating these adorable plush friends</li>
+                    <li><strong>The Community:</strong> All the collectors who make this hobby wonderful</li>
+                </ul>
+            </div>
+
+            <!-- CTA Section -->
+            <div class="cta-section">
+                <h2>Ready to Explore?</h2>
+                <p>Start browsing the collection and track your Squishmallows today!</p>
+                <a href="squishmallowdex.html" class="btn btn-primary">Browse Collection</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2025 Squishmallowdex - An educational, fan-made project</p>
+            <ul class="footer-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="squishmallowdex.html">Collection</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="guide.html">Guide</a></li>
+                <li><a href="https://github.com/adrianwedd/squishmallows" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </footer>
+</body>
+</html>

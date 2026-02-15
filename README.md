@@ -6,6 +6,8 @@
 
 Welcome to a cozy, colorful collector's guide. Squishmallowdex gathers info from the wiki and turns it into a magical, searchable collection you can open anytime.
 
+🌐 **[Browse the Live Collection](https://adrianwedd.github.io/squishmallows/)** - Try it now on GitHub Pages!
+
 ---
 
 ## What You'll Get
@@ -70,6 +72,23 @@ Now it looks like an app and works offline.
 
 - [Installation Guide](INSTALL.md)
 - [Usage Guide](USAGE.md) (for grown-ups who like extra knobs)
+
+---
+
+## GitHub Pages Deployment
+
+This project is automatically deployed to GitHub Pages weekly! The live site includes:
+- 🏠 Landing page with features and stats
+- 📖 Collection browser (3000+ Squishmallows)
+- ℹ️ About page with project details
+- 📚 Interactive usage guide
+
+**Live URL:** https://adrianwedd.github.io/squishmallows/
+
+The deployment is automated via GitHub Actions:
+- Runs weekly (Sunday 2am UTC) to update the collection
+- Can be triggered manually from the Actions tab
+- Automatically regenerates and deploys to `/docs` folder
 
 ---
 

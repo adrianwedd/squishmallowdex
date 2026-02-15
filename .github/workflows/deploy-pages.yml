@@ -1,0 +1,38 @@
+name: Deploy Squishmallowdex to GitHub Pages
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly on Sunday at 2am UTC
+  workflow_dispatch:      # Manual trigger option
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements-test.txt
+
+      - name: Generate collection
+        run: python squishmallowdex.py
+
+      - name: Deploy to /docs
+        run: python deploy.py
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add docs/
+          git diff --quiet && git diff --staged --quiet || \
+            (git commit -m "🤖 Auto-update Squishmallowdex collection [skip ci]" && git push)

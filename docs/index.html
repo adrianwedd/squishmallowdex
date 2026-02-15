@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Squishmallowdex - Your Pokédex for Squishmallows</title>
+    <meta name="description" content="Browse, search, and track your Squishmallow collection. Over 3000 Squishmallows in a kid-friendly, offline-capable web app.">
+    <link rel="stylesheet" href="assets/css/shared.css">
+    <link rel="icon" type="image/png" href="assets/images/icon-192.png">
+    <style>
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, var(--background) 0%, #26a0a8 100%);
+            color: white;
+        }
+
+        .hero-logo {
+            max-width: 300px;
+            height: auto;
+            margin-bottom: 2rem;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Features Grid */
+        .features {
+            padding: 4rem 2rem;
+            background: white;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: var(--ink);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .feature-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--ink);
+        }
+
+        .feature-card p {
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
+        /* Stats Section */
+        .stats {
+            background: var(--accent);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .stat-item h3 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-item p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* About Preview */
+        .about-preview {
+            padding: 4rem 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .about-preview h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--ink);
+        }
+
+        .about-preview p {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: var(--muted);
+            margin-bottom: 2rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1.2rem;
+            }
+
+            .hero-logo {
+                max-width: 200px;
+            }
+
+            .features h2,
+            .about-preview h2 {
+                font-size: 2rem;
+            }
+
+            .hero-cta {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero {
+                padding: 2rem 1rem;
+            }
+
+            .hero h1 {
+                font-size: 1.5rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .feature-icon {
+                font-size: 3rem;
+            }
+
+            .stat-item h3 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <img src="assets/images/squishmallowdex.png" alt="Squishmallowdex Logo" class="hero-logo">
+        <h1>Squishmallowdex</h1>
+        <p>Your Pokédex for Squishmallows - Gotta Squish 'Em All!</p>
+        <div class="hero-cta">
+            <a href="squishmallowdex.html" class="btn btn-primary">Browse Collection</a>
+            <a href="guide.html" class="btn btn-secondary">How to Use</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <h2>Features</h2>
+        <div class="features-grid">
+            <div class="feature-card card">
+                <div class="feature-icon">🔍</div>
+                <h3>Searchable Database</h3>
+                <p>Search by name, number, size, or squad. Find any Squishmallow instantly with powerful filters.</p>
+            </div>
+
+            <div class="feature-card card">
+                <div class="feature-icon">📱</div>
+                <h3>Works Offline</h3>
+                <p>Add to your home screen and use anywhere, anytime. No internet connection required after first load.</p>
+            </div>
+
+            <div class="feature-card card">
+                <div class="feature-icon">❤️</div>
+                <h3>Track Your Collection</h3>
+                <p>Mark your favorites and track which Squishmallows you own. Your data is saved locally and private.</p>
+            </div>
+
+            <div class="feature-card card">
+                <div class="feature-icon">👨‍👩‍👧‍👦</div>
+                <h3>Kid-Friendly Design</h3>
+                <p>Simple, colorful interface designed for collectors of all ages. Educational and fun!</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h3>3000+</h3>
+                <p>Squishmallows</p>
+            </div>
+            <div class="stat-item">
+                <h3>100%</h3>
+                <p>Offline Capable</p>
+            </div>
+            <div class="stat-item">
+                <h3>0</h3>
+                <p>Tracking or Ads</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Preview Section -->
+    <section class="about-preview">
+        <h2>About This Project</h2>
+        <p>
+            Squishmallowdex is an educational web app that helps collectors organize and explore
+            their Squishmallow collection. Built with Python and vanilla JavaScript, it works
+            completely offline and respects your privacy - no tracking, no ads, just pure
+            Squishmallow goodness!
+        </p>
+        <a href="about.html" class="btn btn-primary">Learn More</a>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2025 Squishmallowdex - An educational, fan-made project</p>
+            <ul class="footer-links">
+                <li><a href="squishmallowdex.html">Collection</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="guide.html">Usage Guide</a></li>
+                <li><a href="https://github.com/adrianwedd/squishmallows" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </footer>
+</body>
+</html>

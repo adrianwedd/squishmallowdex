@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usage Guide - Squishmallowdex</title>
+    <meta name="description" content="Learn how to use Squishmallowdex - search, filter, track favorites, and manage your Squishmallow collection.">
+    <link rel="stylesheet" href="assets/css/shared.css">
+    <link rel="icon" type="image/png" href="assets/images/icon-192.png">
+    <style>
+        .content-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .content-section h2 {
+            color: var(--accent);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .content-section h3 {
+            color: var(--ink);
+            font-size: 1.5rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .content-section p {
+            color: var(--muted);
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .content-section ul {
+            color: var(--muted);
+            line-height: 1.8;
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .content-section ol {
+            color: var(--muted);
+            line-height: 1.8;
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .feature-item {
+            background: var(--background);
+            color: white;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+        }
+
+        .feature-item strong {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tip-box {
+            background: #fff9e6;
+            border-left: 4px solid var(--accent);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .tip-box strong {
+            color: var(--accent);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: var(--ink);
+        }
+
+        pre {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .toc {
+            background: var(--background);
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+        }
+
+        .toc h2 {
+            margin-bottom: 1rem;
+        }
+
+        .toc ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .toc a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 0.5rem 0;
+            transition: padding-left 0.2s;
+        }
+
+        .toc a:hover {
+            padding-left: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .content-section {
+                padding: 1.5rem;
+            }
+
+            .content-section h2 {
+                font-size: 1.5rem;
+            }
+
+            .feature-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container">
+            <a href="index.html" class="site-logo">
+                <img src="assets/images/squishmallowdex.png" alt="Squishmallowdex">
+                <h1>Squishmallowdex</h1>
+            </a>
+            <nav>
+                <ul class="site-nav">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="squishmallowdex.html">Collection</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="guide.html" class="active">Guide</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="container">
+            <!-- Table of Contents -->
+            <div class="toc">
+                <h2>Table of Contents</h2>
+                <ul>
+                    <li><a href="#viewing">Viewing Your Collection</a></li>
+                    <li><a href="#searching">Searching & Filtering</a></li>
+                    <li><a href="#tracking">Tracking Your Collection</a></li>
+                    <li><a href="#sorting">Sorting</a></li>
+                    <li><a href="#offline">Offline Usage</a></li>
+                    <li><a href="#mobile">Using on Mobile</a></li>
+                    <li><a href="#troubleshooting">Troubleshooting</a></li>
+                </ul>
+            </div>
+
+            <!-- Viewing Collection -->
+            <div id="viewing" class="content-section">
+                <h2>Viewing Your Collection</h2>
+                <p>
+                    Simply open the <strong>squishmallowdex.html</strong> file in any web browser
+                    to view your collection. No internet connection required after the first load!
+                </p>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <strong>🔍 Search</strong>
+                        <span>Find by name, number, size, or squad</span>
+                    </div>
+                    <div class="feature-item">
+                        <strong>📊 Sort</strong>
+                        <span>Click any column header to sort</span>
+                    </div>
+                    <div class="feature-item">
+                        <strong>❤️ Favorites</strong>
+                        <span>Click the heart to mark favorites</span>
+                    </div>
+                    <div class="feature-item">
+                        <strong>✓ Ownership</strong>
+                        <span>Check the box for ones you own</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Searching & Filtering -->
+            <div id="searching" class="content-section">
+                <h2>Searching & Filtering</h2>
+                <p>
+                    The search box at the top of the collection allows you to quickly find
+                    Squishmallows by various criteria:
+                </p>
+                <ul>
+                    <li><strong>By Name:</strong> Type any part of a Squishmallow's name (e.g., "cam", "bunny")</li>
+                    <li><strong>By Number:</strong> Search by Squishmallow number (e.g., "001", "1234")</li>
+                    <li><strong>By Size:</strong> Filter by size category (e.g., "8 inch", "12 inch")</li>
+                    <li><strong>By Squad:</strong> Find all members of a squad (e.g., "farm squad", "ocean squad")</li>
+                </ul>
+                <div class="tip-box">
+                    <strong>Pro Tip:</strong>
+                    <p>The search is case-insensitive and matches partial text. Try searching for colors, themes, or any text that appears in the Squishmallow details!</p>
+                </div>
+            </div>
+
+            <!-- Tracking Collection -->
+            <div id="tracking" class="content-section">
+                <h2>Tracking Your Collection</h2>
+                <p>
+                    Squishmallowdex includes two ways to track your collection, with all data
+                    stored locally on your device:
+                </p>
+
+                <h3>❤️ Favorites</h3>
+                <p>
+                    Click the heart icon next to any Squishmallow to mark it as a favorite.
+                    Your favorites are highlighted and can be filtered using the "Show Only Favorites"
+                    button at the top of the page.
+                </p>
+
+                <h3>✓ Ownership Tracking</h3>
+                <p>
+                    Check the box next to any Squishmallow you own. You can filter to show only
+                    owned Squishmallows using the "Show Only Owned" button. This is perfect for
+                    tracking which ones you still need to collect!
+                </p>
+
+                <div class="tip-box">
+                    <strong>Privacy First:</strong>
+                    <p>All your favorites and ownership data is stored in your browser's local storage. It never leaves your device - no accounts, no tracking, no servers!</p>
+                </div>
+            </div>
+
+            <!-- Sorting -->
+            <div id="sorting" class="content-section">
+                <h2>Sorting</h2>
+                <p>
+                    Click any column header to sort your collection by that field:
+                </p>
+                <ul>
+                    <li><strong>Number:</strong> Sort by Squishmallow ID number</li>
+                    <li><strong>Name:</strong> Alphabetical order by name</li>
+                    <li><strong>Size:</strong> Group by size categories</li>
+                    <li><strong>Squad:</strong> Organize by squad membership</li>
+                </ul>
+                <p>
+                    Click the same header again to reverse the sort order (ascending ↔ descending).
+                </p>
+            </div>
+
+            <!-- Offline Usage -->
+            <div id="offline" class="content-section">
+                <h2>Offline Usage</h2>
+                <p>
+                    Squishmallowdex is a Progressive Web App (PWA) that works completely offline
+                    after the first load. This means:
+                </p>
+                <ul>
+                    <li>View your entire collection without internet</li>
+                    <li>Search, sort, and filter all work offline</li>
+                    <li>Your favorites and ownership data is always available</li>
+                    <li>No data usage - perfect for mobile devices!</li>
+                </ul>
+                <div class="tip-box">
+                    <strong>How it Works:</strong>
+                    <p>The collection page includes all images and data embedded directly in the HTML file. Once loaded, everything is cached in your browser for instant offline access.</p>
+                </div>
+            </div>
+
+            <!-- Mobile Usage -->
+            <div id="mobile" class="content-section">
+                <h2>Using on Mobile Devices</h2>
+                <p>
+                    Want to carry your Squishmallow collection in your pocket? Add Squishmallowdex
+                    to your home screen for an app-like experience!
+                </p>
+
+                <h3>📱 On iPhone/iPad (Safari):</h3>
+                <ol>
+                    <li>Open <strong>squishmallowdex.html</strong> in Safari</li>
+                    <li>Tap the <strong>Share</strong> button (square with arrow)</li>
+                    <li>Scroll down and tap <strong>Add to Home Screen</strong></li>
+                    <li>Name it and tap <strong>Add</strong></li>
+                </ol>
+
+                <h3>📱 On Android (Chrome):</h3>
+                <ol>
+                    <li>Open <strong>squishmallowdex.html</strong> in Chrome</li>
+                    <li>Tap the <strong>⋮</strong> menu (three dots)</li>
+                    <li>Tap <strong>Add to Home screen</strong></li>
+                    <li>Name it and tap <strong>Add</strong></li>
+                </ol>
+
+                <p>
+                    Now you can launch Squishmallowdex like a native app, and it works completely
+                    offline!
+                </p>
+            </div>
+
+            <!-- Troubleshooting -->
+            <div id="troubleshooting" class="content-section">
+                <h2>Troubleshooting</h2>
+
+                <h3>Images Not Loading</h3>
+                <p>
+                    If images aren't showing up, make sure the <code>squish_images/</code> folder
+                    is in the same directory as the HTML file. The file structure should look like:
+                </p>
+                <pre><code>your-folder/
+├── squishmallowdex.html
+└── squish_images/
+    ├── image001.jpg
+    ├── image002.jpg
+    └── ...</code></pre>
+
+                <h3>Favorites/Ownership Not Saving</h3>
+                <p>
+                    If your favorites or ownership tracking isn't persisting between sessions,
+                    your browser may have localStorage disabled. Check your browser's privacy
+                    settings and ensure local storage is enabled.
+                </p>
+
+                <h3>Search Not Working</h3>
+                <p>
+                    Make sure JavaScript is enabled in your browser. Squishmallowdex requires
+                    JavaScript for search, sort, and filtering features.
+                </p>
+
+                <h3>File Too Large</h3>
+                <p>
+                    The full collection HTML file can be quite large (35+ MB) due to embedded
+                    images. This is normal! Modern browsers can handle this size easily. If you
+                    experience performance issues, try using a different browser or viewing on
+                    a device with more memory.
+                </p>
+
+                <div class="tip-box">
+                    <strong>Still Having Issues?</strong>
+                    <p>Check the <a href="https://github.com/adrianwedd/squishmallows/issues" target="_blank">GitHub Issues</a> page or create a new issue for help!</p>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="content-section" style="text-align: center; background: linear-gradient(135deg, var(--background) 0%, #26a0a8 100%); color: white;">
+                <h2>Ready to Browse?</h2>
+                <p>Start exploring your Squishmallow collection now!</p>
+                <a href="squishmallowdex.html" class="btn btn-primary">Open Collection</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2025 Squishmallowdex - An educational, fan-made project</p>
+            <ul class="footer-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="squishmallowdex.html">Collection</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="guide.html">Guide</a></li>
+                <li><a href="https://github.com/adrianwedd/squishmallows" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </footer>
+</body>
+</html>

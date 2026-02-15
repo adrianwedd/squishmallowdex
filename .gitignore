@@ -1,11 +1,15 @@
-# Generated files
+# Generated files (root only - docs/ versions are tracked for GitHub Pages)
 squishmallowdex.html
 squishmallowdex.csv
 squishmallow.log
 
-# Cache and downloaded content
+# Cache and downloaded content (root only - docs/ versions are tracked)
 cache_html/
 squish_images/
+
+# Keep GitHub Pages deployment
+!docs/
+!docs/**/*
 
 # Progress tracking
 progress_urls.txt

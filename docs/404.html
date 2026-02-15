@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found | Squishmallowdex</title>
+    <link rel="stylesheet" href="assets/css/shared.css">
+    <link rel="icon" type="image/png" href="assets/images/icon-192.png">
+    <style>
+        .error-container {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .error-content {
+            max-width: 600px;
+        }
+
+        .error-code {
+            font-size: 8rem;
+            font-weight: 700;
+            color: var(--accent);
+            line-height: 1;
+            margin-bottom: 1rem;
+        }
+
+        .error-title {
+            font-size: 2rem;
+            color: var(--ink);
+            margin-bottom: 1rem;
+        }
+
+        .error-message {
+            font-size: 1.2rem;
+            color: var(--muted);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .error-emoji {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-links {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .error-code {
+                font-size: 5rem;
+            }
+
+            .error-title {
+                font-size: 1.5rem;
+            }
+
+            .error-links {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="error-container">
+            <div class="error-content">
+                <div class="error-emoji">🔍</div>
+                <div class="error-code">404</div>
+                <h1 class="error-title">Oops! This Squishmallow Got Away</h1>
+                <p class="error-message">
+                    We couldn't find the page you're looking for. It might have been moved,
+                    deleted, or perhaps it never existed. Let's get you back to the collection!
+                </p>
+                <div class="error-links">
+                    <a href="index.html" class="btn btn-primary">Go Home</a>
+                    <a href="squishmallowdex.html" class="btn btn-secondary">Browse Collection</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2025 Squishmallowdex - An educational, fan-made project</p>
+            <ul class="footer-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="squishmallowdex.html">Collection</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="guide.html">Guide</a></li>
+                <li><a href="https://github.com/adrianwedd/squishmallows" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </footer>
+</body>
+</html>
