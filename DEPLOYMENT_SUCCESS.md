@@ -8,6 +8,9 @@
 ## 🌐 Your Live Site
 
 ### Production URL
+**https://squishmallowdex.com**
+
+### Cloudflare Pages URL
 **https://eca56920.squishmallowdex.pages.dev**
 
 ### Deployment Stats

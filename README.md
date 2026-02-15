@@ -79,7 +79,7 @@ Now it looks like an app and works offline.
 
 This project is deployed on Cloudflare Pages with automatic builds on every push!
 
-**Live Site:** Coming soon! (Your custom domain here)
+**🌍 Live Site:** https://squishmallowdex.com
 
 The live site includes:
 - 🏠 Landing page with features and stats
