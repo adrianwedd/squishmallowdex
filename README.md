@@ -72,6 +72,7 @@ Now it looks like an app and works offline.
 
 - [Installation Guide](INSTALL.md)
 - [Usage Guide](USAGE.md) (for grown-ups who like extra knobs)
+- [Card View Implementation Plan](CARD_VIEW_IMPLEMENTATION_PLAN.md)
 
 ---
 
