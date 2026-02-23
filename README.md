@@ -12,10 +12,13 @@ Welcome to a cozy, colorful collector's guide. Squishmallowdex gathers info from
 
 ## What You'll Get
 
-- A big, searchable collection with pictures
-- Favourites and ownership tracking (hearts and checkboxes)
+- A big, searchable collection with pictures — switch between **table** and **card** views
+- Favourites and ownership tracking (hearts and checkboxes), synced across both views
+- Filter by name, favorites-only, or owned-only; sort by name, type, year, collector number, and more
+- **Compact card mode** for power browsers; card view remembered across reloads
+- Amazon affiliate buy buttons on every entry
 - Works offline after it is built
-- Kid-friendly, easy to browse
+- Kid-friendly, easy to browse on desktop, tablet, or phone
 
 ---
 
@@ -72,7 +75,7 @@ Now it looks like an app and works offline.
 
 - [Installation Guide](INSTALL.md)
 - [Usage Guide](USAGE.md) (for grown-ups who like extra knobs)
-- [Card View Implementation Plan](CARD_VIEW_IMPLEMENTATION_PLAN.md)
+- [Roadmap](ROADMAP.md)
 
 ---
 

@@ -2,6 +2,19 @@
 
 ## Current Release
 
+### v1.2.0 (Released)
+- **Card view** — toggle between table and card layouts, persisted across reloads
+- **Loading spinner** with deferred rendering (no flash of partial cards)
+- **Shared filter/sort pipeline** — search, favorites-only, owned-only work in both views
+- **Compact card density** toggle, persisted to localStorage
+- **Sort fix** — missing Collector # and Year values now sort last in both ascending and descending order
+- **rAF race guard** — rapid view toggles no longer produce stale renders
+- **Search debounce** (130ms) for smooth typing on large datasets
+- **Accessibility** — `:focus-visible` styles, keyboard-navigable sort headers, descriptive aria-labels on all card actions
+- **Reduced-motion support** — card hover transitions and view fade gated on `prefers-reduced-motion`
+- **Mobile chip priority** — Size and Squad chips hidden on narrow screens to reduce clutter
+- Amazon affiliate buy buttons and FTC disclosure in footer
+
 ### v1.1.0 (Released)
 - Dry-run mode (`--dry-run`)
 - Thumbnail size control (`--thumb-size`)
@@ -14,12 +27,14 @@
 
 ## Upcoming Releases
 
-### v1.2.0 - Self-Upgrade
+### v1.3.0 - Self-Upgrade
 One-command upgrades that preserve your collection.
 
 ```bash
 python3 squishmallowdex.py --upgrade
 ```
+
+**Branch:** `v1.3.0`
 
 **Features:**
 - `--version` - Show current version
@@ -35,8 +50,6 @@ python3 squishmallowdex.py --upgrade
 4. Downloads and installs the update
 5. Runs any needed migrations
 6. Verifies everything works (or rolls back)
-
-**Branch:** `v1.2.0`
 
 ---
 
