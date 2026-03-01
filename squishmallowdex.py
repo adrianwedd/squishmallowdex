@@ -1569,6 +1569,69 @@ def render_html(
 }}
 </script>
 
+<!-- Organization JSON-LD -->
+<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Squishmallowdex",
+  "url": "https://squishmallowdex.com",
+  "logo": "https://squishmallowdex.com/og-image.png",
+  "description": "Your comprehensive database for Squishmallows - search, track, and collect over 3,000 plush toys",
+  "sameAs": [
+    "https://github.com/adrianwedd/squishmallowdex"
+  ],
+  "contactPoint": {{
+    "@type": "ContactPoint",
+    "contactType": "Customer Service",
+    "url": "https://squishmallowdex.com/about"
+  }}
+}}
+</script>
+
+<!-- CollectionPage JSON-LD -->
+<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "{{escape(title)}}",
+  "description": "Browse and search through the complete collection of Squishmallows plush toys - over 3,000 unique characters",
+  "url": "https://squishmallowdex.com/squishmallowdex",
+  "about": {{
+    "@type": "Thing",
+    "name": "Squishmallows",
+    "description": "Collectible plush toys by Kelly Toy Holdings LLC"
+  }},
+  "mainEntity": {{
+    "@type": "ItemList",
+    "numberOfItems": "{len(rows)}",
+    "itemListElement": "Collection of Squishmallows plush toys"
+  }}
+}}
+</script>
+
+<!-- BreadcrumbList JSON-LD -->
+<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {{
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://squishmallowdex.com"
+    }},
+    {{
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Collection",
+      "item": "https://squishmallowdex.com/squishmallowdex"
+    }}
+  ]
+}}
+</script>
+
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
