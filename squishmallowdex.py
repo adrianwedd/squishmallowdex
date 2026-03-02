@@ -2010,7 +2010,7 @@ def render_html(
 {css}
 </style>
 </head>
-<body class="mode-table">
+<body class="mode-cards">
 <header>
   {logo_html}
   <div class="header-text">
@@ -2020,8 +2020,8 @@ def render_html(
   <div class="controls">
     <input id="search" class="search" type="search" placeholder="Search by name, type, color..."/>
     <div class="view-toggle" role="group" aria-label="View mode">
-      <button class="view-btn" id="viewTableBtn" type="button" aria-pressed="true">Table</button>
-      <button class="view-btn" id="viewCardsBtn" type="button" aria-pressed="false">Cards</button>
+      <button class="view-btn" id="viewTableBtn" type="button" aria-pressed="false">Table</button>
+      <button class="view-btn" id="viewCardsBtn" type="button" aria-pressed="true">Cards</button>
       <button class="view-btn" id="compactBtn" type="button" aria-pressed="false" title="Compact card view" hidden>Compact</button>
     </div>
     <div class="filters">
@@ -2120,7 +2120,7 @@ def render_html(
   let buyClicks   = {{}};
   let showOnlyFav = false;
   let showOnlyOwn = false;
-  let viewMode    = safeGet('squishdex-view') === 'cards' ? 'cards' : 'table';
+  let viewMode    = safeGet('squishdex-view') === 'table' ? 'table' : 'cards';
   let viewRenderToken = 0;
   let searchTimer = null;
   let currentPage = 1;
