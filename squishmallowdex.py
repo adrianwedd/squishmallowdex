@@ -34,6 +34,16 @@ from urllib.parse import quote, urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
+# Import affiliate configuration
+try:
+    from affiliate_config import search_amazon_url
+except ImportError:
+    # Fallback if affiliate_config.py doesn't exist
+    def search_amazon_url(name, marketplace="US"):
+        from urllib.parse import quote_plus
+        query = quote_plus(f"{name} squishmallow")
+        return f"https://www.amazon.com/s?k={query}&tag=adrianwedd-20"
+
 # Optional third-party (with graceful fallback)
 try:
     from PIL import Image
@@ -1090,9 +1100,8 @@ def _build_table_body(
             elif col == "🛒":
                 # Buy button for Amazon affiliate link
                 name = row.get("Name") or ""
-                # Create Amazon search link (will be replaced with ASIN links later)
-                search_query = f"{name} squishmallow".replace(" ", "+")
-                buy_link = f"https://www.amazon.com/s?k={search_query}&tag=adrianwedd-20"
+                # Use centralized affiliate link generation
+                buy_link = search_amazon_url(name)
                 cells.append(
                     f'<td data-col="{i}"><a href="{buy_link}" target="_blank" rel="noopener" class="buy-btn" data-id="{row_id}" aria-label="Buy on Amazon">🛒</a></td>'
                 )
@@ -1482,6 +1491,69 @@ def _render_css(thumb_size: int, thumb_size_768: int, thumb_size_480: int) -> st
   .footer-links a:hover {{
     text-decoration: underline;
   }}
+  /* Pagination */
+  .pagination {{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }}
+  .page-btn {{
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: var(--card);
+    cursor: pointer;
+    font-size: 16px;
+    min-width: 40px;
+    transition: all 0.15s;
+  }}
+  .page-btn:hover:not(:disabled) {{
+    border-color: var(--accent);
+    background: #e0f7fa;
+  }}
+  .page-btn:disabled {{
+    opacity: 0.3;
+    cursor: not-allowed;
+  }}
+  .page-info {{
+    padding: 8px 16px;
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 500;
+  }}
+  .page-size {{
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: var(--card);
+    cursor: pointer;
+    font-size: 14px;
+  }}
+  .page-size:hover {{
+    border-color: var(--accent);
+  }}
+  @media (max-width: 480px) {{
+    .pagination {{
+      gap: 4px;
+      padding: 8px;
+    }}
+    .page-btn {{
+      padding: 6px 10px;
+      font-size: 14px;
+      min-width: 36px;
+    }}
+    .page-info {{
+      font-size: 13px;
+      padding: 6px 12px;
+    }}
+    .page-size {{
+      font-size: 13px;
+      padding: 6px 10px;
+    }}
+  }}
 """
 
 
@@ -1594,7 +1666,7 @@ def render_html(
 {{
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  "name": "{{escape(title)}}",
+  "name": "{title}",
   "description": "Browse and search through the complete collection of Squishmallows plush toys - over 3,000 unique characters",
   "url": "https://squishmallowdex.com/squishmallowdex",
   "about": {{
@@ -1604,7 +1676,7 @@ def render_html(
   }},
   "mainEntity": {{
     "@type": "ItemList",
-    "numberOfItems": "{len(rows)}",
+    "numberOfItems": {len(rows)},
     "itemListElement": "Collection of Squishmallows plush toys"
   }}
 }}
@@ -1664,6 +1736,19 @@ def render_html(
   </div>
 </header>
 <div class="count" id="count"></div>
+<div class="pagination" id="paginationTop">
+  <button class="page-btn" id="firstPage" aria-label="First page">«</button>
+  <button class="page-btn" id="prevPage" aria-label="Previous page">‹</button>
+  <span class="page-info" id="pageInfo">Page 1</span>
+  <button class="page-btn" id="nextPage" aria-label="Next page">›</button>
+  <button class="page-btn" id="lastPage" aria-label="Last page">»</button>
+  <select class="page-size" id="pageSize" aria-label="Items per page">
+    <option value="50">50 per page</option>
+    <option value="100" selected>100 per page</option>
+    <option value="250">250 per page</option>
+    <option value="500">500 per page</option>
+  </select>
+</div>
 <div class="table-wrap">
   <table id="dex">
     <thead>{head}</thead>
@@ -1683,10 +1768,29 @@ def render_html(
   const colDropdown = document.getElementById('colDropdown');
   const countEl = document.getElementById('count');
 
+  // Safe localStorage helpers (handles private browsing, quota exceeded, etc.)
+  function safeLocalStorageGet(key, defaultValue = '{{}}') {{
+    try {{
+      return localStorage.getItem(key) || defaultValue;
+    }} catch(e) {{
+      console.warn(`localStorage.getItem failed for ${{key}}:`, e);
+      return defaultValue;
+    }}
+  }}
+
+  function safeLocalStorageSet(key, value) {{
+    try {{
+      localStorage.setItem(key, value);
+    }} catch(e) {{
+      console.warn(`localStorage.setItem failed for ${{key}}:`, e);
+      // Silently fail - app continues to work without persistence
+    }}
+  }}
+
   // Load saved column visibility
   let visibility = {{}};
   try {{
-    visibility = JSON.parse(localStorage.getItem('squishdex-cols') || '{{}}');
+    visibility = JSON.parse(safeLocalStorageGet('squishdex-cols'));
   }} catch(e) {{}}
 
   // Initialize visibility from config/storage
@@ -1704,7 +1808,7 @@ def render_html(
     cb.checked = visibility[c.name];
     cb.addEventListener('change', () => {{
       visibility[c.name] = cb.checked;
-      localStorage.setItem('squishdex-cols', JSON.stringify(visibility));
+      safeLocalStorageSet('squishdex-cols', JSON.stringify(visibility));
       applyVisibility();
     }});
     label.appendChild(cb);
@@ -1788,8 +1892,8 @@ def render_html(
   let favourites = {{}};
   let owned = {{}};
   try {{
-    favourites = JSON.parse(localStorage.getItem('squishdex-fav') || '{{}}');
-    owned = JSON.parse(localStorage.getItem('squishdex-own') || '{{}}');
+    favourites = JSON.parse(safeLocalStorageGet('squishdex-fav'));
+    owned = JSON.parse(safeLocalStorageGet('squishdex-own'));
   }} catch(e) {{}}
 
   // Initialize hearts and checkboxes from storage
@@ -1803,7 +1907,7 @@ def render_html(
       favourites[id] = !favourites[id];
       btn.classList.toggle('active', favourites[id]);
       btn.textContent = favourites[id] ? '❤️' : '♡';
-      localStorage.setItem('squishdex-fav', JSON.stringify(favourites));
+      safeLocalStorageSet('squishdex-fav', JSON.stringify(favourites));
       applyFilters();
     }});
   }});
@@ -1813,7 +1917,7 @@ def render_html(
     cb.checked = !!owned[id];
     cb.addEventListener('change', () => {{
       owned[id] = cb.checked;
-      localStorage.setItem('squishdex-own', JSON.stringify(owned));
+      safeLocalStorageSet('squishdex-own', JSON.stringify(owned));
       applyFilters();
     }});
   }});
@@ -1853,17 +1957,96 @@ def render_html(
 
   updateCount();
 
+  // ─── Pagination ───
+  let currentPage = 1;
+  let pageSize = 100;
+  const firstPageBtn = document.getElementById('firstPage');
+  const prevPageBtn = document.getElementById('prevPage');
+  const nextPageBtn = document.getElementById('nextPage');
+  const lastPageBtn = document.getElementById('lastPage');
+  const pageInfo = document.getElementById('pageInfo');
+  const pageSizeSelect = document.getElementById('pageSize');
+
+  function getFilteredRows() {{
+    return Array.from(tbody.querySelectorAll('tr')).filter(row => row.style.display !== 'none');
+  }}
+
+  function applyPagination() {{
+    const filteredRows = getFilteredRows();
+    const totalPages = Math.ceil(filteredRows.length / pageSize) || 1;
+
+    // Clamp current page to valid range
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    // Hide all filtered rows first
+    filteredRows.forEach(row => row.classList.add('hidden'));
+
+    // Show only current page rows
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    filteredRows.slice(start, end).forEach(row => row.classList.remove('hidden'));
+
+    // Update UI
+    pageInfo.textContent = `Page ${{currentPage}} of ${{totalPages}}`;
+    firstPageBtn.disabled = currentPage === 1;
+    prevPageBtn.disabled = currentPage === 1;
+    nextPageBtn.disabled = currentPage === totalPages;
+    lastPageBtn.disabled = currentPage === totalPages;
+
+    // Update count to show pagination info
+    const showing = Math.min(pageSize, filteredRows.length - start);
+    const total = tbody.querySelectorAll('tr').length;
+    if (filteredRows.length === total) {{
+      countEl.textContent = `Showing ${{start + 1}}-${{start + showing}} of ${{total}} Squishmallows`;
+    }} else {{
+      countEl.textContent = `Showing ${{start + 1}}-${{start + showing}} of ${{filteredRows.length}} (${{total}} total)`;
+    }}
+  }}
+
+  function goToPage(page) {{
+    currentPage = page;
+    applyPagination();
+    window.scrollTo({{ top: 0, behavior: 'smooth' }});
+  }}
+
+  firstPageBtn.addEventListener('click', () => goToPage(1));
+  prevPageBtn.addEventListener('click', () => goToPage(currentPage - 1));
+  nextPageBtn.addEventListener('click', () => goToPage(currentPage + 1));
+  lastPageBtn.addEventListener('click', () => {{
+    const filteredRows = getFilteredRows();
+    const totalPages = Math.ceil(filteredRows.length / pageSize) || 1;
+    goToPage(totalPages);
+  }});
+
+  pageSizeSelect.addEventListener('change', () => {{
+    pageSize = parseInt(pageSizeSelect.value);
+    currentPage = 1; // Reset to first page when changing page size
+    applyPagination();
+  }});
+
+  // Modify applyFilters to also apply pagination
+  const originalApplyFilters = applyFilters;
+  applyFilters = function() {{
+    originalApplyFilters();
+    currentPage = 1; // Reset to first page when filters change
+    applyPagination();
+  }};
+
+  // Initial pagination
+  applyPagination();
+
   // ─── Affiliate Analytics (Privacy-First) ───
   let buyClicks = {{}};
   try {{
-    buyClicks = JSON.parse(localStorage.getItem('squishdex-buyclicks') || '{{}}');
+    buyClicks = JSON.parse(safeLocalStorageGet('squishdex-buyclicks'));
   }} catch(e) {{}}
 
   document.querySelectorAll('.buy-btn').forEach(btn => {{
     btn.addEventListener('click', () => {{
       const id = btn.dataset.id;
       buyClicks[id] = (buyClicks[id] || 0) + 1;
-      localStorage.setItem('squishdex-buyclicks', JSON.stringify(buyClicks));
+      safeLocalStorageSet('squishdex-buyclicks', JSON.stringify(buyClicks));
       // Note: No personal data collected, just click counts per item
     }});
   }});

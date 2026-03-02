@@ -72,7 +72,13 @@ class SquishmallowBot:
             response = self.client.create_tweet(text=tweet_text)
             print(f"✅ Tweeted about {name}: {response.data['id']}")
             return response.data['id']
-        except Exception as e:
+        except tweepy.TooManyRequests as e:
+            print(f"❌ Rate limit exceeded: {e}")
+            return None
+        except tweepy.Unauthorized as e:
+            print(f"❌ Authentication failed: {e}")
+            return None
+        except tweepy.TweepyException as e:
             print(f"❌ Error tweeting: {e}")
             return None
 
@@ -95,7 +101,13 @@ class SquishmallowBot:
             response = self.client.create_tweet(text=tip)
             print(f"✅ Posted collecting tip: {response.data['id']}")
             return response.data['id']
-        except Exception as e:
+        except tweepy.TooManyRequests as e:
+            print(f"❌ Rate limit exceeded: {e}")
+            return None
+        except tweepy.Unauthorized as e:
+            print(f"❌ Authentication failed: {e}")
+            return None
+        except tweepy.TweepyException as e:
             print(f"❌ Error posting tip: {e}")
             return None
 
@@ -126,7 +138,13 @@ class SquishmallowBot:
             response = self.client.create_tweet(text=tweet_text)
             print(f"✅ Posted daily Squish: {name}")
             return response.data['id']
-        except Exception as e:
+        except tweepy.TooManyRequests as e:
+            print(f"❌ Rate limit exceeded: {e}")
+            return None
+        except tweepy.Unauthorized as e:
+            print(f"❌ Authentication failed: {e}")
+            return None
+        except tweepy.TweepyException as e:
             print(f"❌ Error posting daily Squish: {e}")
             return None
 
@@ -156,7 +174,13 @@ class SquishmallowBot:
             response = self.client.create_tweet(text=tweet_text)
             print(f"✅ Posted weekly stats")
             return response.data['id']
-        except Exception as e:
+        except tweepy.TooManyRequests as e:
+            print(f"❌ Rate limit exceeded: {e}")
+            return None
+        except tweepy.Unauthorized as e:
+            print(f"❌ Authentication failed: {e}")
+            return None
+        except tweepy.TweepyException as e:
             print(f"❌ Error posting stats: {e}")
             return None
 

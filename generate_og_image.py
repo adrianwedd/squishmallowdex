@@ -32,13 +32,14 @@ def create_og_image(output_path='og-image.png'):
         # Try to load a nice sans-serif font
         title_font = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial Bold.ttf', 90)
         subtitle_font = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial.ttf', 40)
-    except:
+    except (OSError, IOError) as e:
         try:
             # Fallback for macOS
             title_font = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 90)
             subtitle_font = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 40)
-        except:
+        except (OSError, IOError) as e:
             # Use default font if no system fonts available
+            print(f"⚠️  System fonts not found, using default font (image may look basic)")
             title_font = ImageFont.load_default()
             subtitle_font = ImageFont.load_default()
 
