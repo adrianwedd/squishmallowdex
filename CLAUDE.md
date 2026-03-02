@@ -55,7 +55,7 @@ Column indices are hard-coded in JS (`cells[N]`). If columns change in `_table_c
 - View modes are controlled by body classes: `mode-table` / `mode-cards`.
   - `mode-table` hides `.card-wrap` and shows `.pagination`
   - `mode-cards` hides `.table-wrap` and `.pagination`
-- `<body class="mode-table">` in the HTML template prevents flash before JS runs.
+- `<body class="mode-cards">` in the HTML template prevents flash before JS runs (cards is the default view).
 - Card view builds all cards from `rowModels` (extracted from the DOM once on load).
 - Pagination only applies in table mode.
 
