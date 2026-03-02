@@ -106,6 +106,45 @@ python3 squishmallowdex.py --embed-images --thumb-size 150
 
 ---
 
+## Data Source Options (--source)
+
+By default the scraper fetches every Squishmallow page from the Fandom wiki one at a time.
+Use `--source site` to pull all data in a single request from the deployed squishmallowdex.com HTML table instead:
+
+```bash
+# Fast bootstrap from the live site (no wiki scraping)
+python3 squishmallowdex.py --source site --no-download-images
+
+# With images (downloads thumbnails after fetching data)
+python3 squishmallowdex.py --source site
+```
+
+Use `--source wiki` (default) to scrape fresh data directly from the Fandom wiki.
+
+---
+
+## Deploying to the Live Site
+
+The live site at **squishmallowdex.com** is served from the `docs/` directory.
+After any change to `squishmallowdex.py`, you must regenerate the HTML **and** copy it to `docs/` before pushing:
+
+```bash
+# 1. Regenerate HTML (skip re-downloading images if unchanged)
+python3 squishmallowdex.py --no-download
+
+# 2. Copy updated HTML to docs/ (and sync images)
+python3 deploy.py
+
+# 3. Commit and push everything
+git add squishmallowdex.html docs/squishmallowdex.html
+git commit -m "Regenerate HTML"
+git push
+```
+
+Skipping `deploy.py` means the live site stays on the old version even after pushing.
+
+---
+
 ## Running Tests
 
 Install test dependencies:
