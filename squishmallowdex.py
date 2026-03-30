@@ -2640,7 +2640,8 @@ def build_html_rows(
         row_html = dict(row)
         # Make image clickable to open full-size version
         if img_src:
-            img_tag = f'<img class="thumb" src="{escape(img_src)}" loading="lazy"/>'
+            alt_text = escape(f'{row.get("Name", "")} the {row.get("Type", "Squishmallow")}')
+            img_tag = f'<img class="thumb" src="{escape(img_src)}" alt="{alt_text}" loading="lazy"/>'
             if full_img:
                 row_html["Image"] = f'<a href="{escape(full_img)}" target="_blank" rel="noopener">{img_tag}</a>'
             else:
