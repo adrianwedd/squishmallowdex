@@ -55,7 +55,7 @@ If something does not work:
 
 - Do not worry - take a deep squishy breath
 - Ask a grown-up or a tech-savvy friend for help
-- See the friendly step-by-step in `INSTALL.md`
+- See the [Usage Guide](https://squishmallowdex.com/guide.html)
 
 ---
 
@@ -73,8 +73,8 @@ Now it looks like an app and works offline.
 
 ## Documentation
 
-- [Installation Guide](INSTALL.md)
-- [Usage Guide](USAGE.md) (for grown-ups who like extra knobs)
+- [About](https://squishmallowdex.com/about.html)
+- [Usage Guide](https://squishmallowdex.com/guide.html)
 - [Roadmap](ROADMAP.md)
 
 ---
