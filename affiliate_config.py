@@ -4,6 +4,8 @@ Affiliate Configuration for Squishmallowdex
 Set your Amazon Associates affiliate ID here once you're approved.
 """
 
+from urllib.parse import quote_plus
+
 # Amazon Associates Configuration
 # Get your ID from: https://affiliate-program.amazon.com/
 AMAZON_ASSOCIATE_ID = "adrianwedd-20"  # ✅ Real Amazon Associates ID
@@ -51,5 +53,5 @@ def search_amazon_url(name: str, marketplace: str = DEFAULT_MARKETPLACE) -> str:
         Amazon search URL with affiliate tag
     """
     base_url = AMAZON_URL_BASE.get(marketplace, AMAZON_URL_BASE["US"])
-    query = f"{name} squishmallow".replace(" ", "+")
+    query = quote_plus(f"{name} squishmallow")
     return f"{base_url}/s?k={query}&tag={AMAZON_ASSOCIATE_ID}"

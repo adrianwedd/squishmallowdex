@@ -34,6 +34,16 @@ from urllib.parse import quote, urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
+# Import affiliate configuration
+try:
+    from affiliate_config import search_amazon_url
+except ImportError:
+    # Fallback if affiliate_config.py doesn't exist
+    def search_amazon_url(name, marketplace="US"):
+        from urllib.parse import quote_plus
+        query = quote_plus(f"{name} squishmallow")
+        return f"https://www.amazon.com/s?k={query}&tag=adrianwedd-20"
+
 # Optional third-party (with graceful fallback)
 try:
     from PIL import Image
@@ -699,6 +709,7 @@ log: AdventureLog = AdventureLog()
 
 BASE = "https://squishmallowsquad.fandom.com"
 MASTER_LIST = urljoin(BASE, "/wiki/Master_List")
+SITE_URL = "https://squishmallowdex.com/squishmallowdex.html"
 
 HEADERS = {
     "User-Agent": "Squishmallowdex/1.0 (personal use)",
@@ -804,6 +815,66 @@ def extract_master_list_urls(master_html: bytes) -> list[str]:
     # Filter obvious list/index pages that are not individual characters.
     urls = [u for u in urls if not NOISY_PAGES.search(u)]
     return urls
+
+
+def fetch_from_site(session: requests.Session) -> list[dict[str, str | None]]:
+    """Fetch and parse all Squishmallow data from the deployed squishmallowdex.com site.
+
+    Parses the HTML table (id="dex") and maps data-col indices to CSV field names.
+    Returns a list of row dicts compatible with the CSV schema.
+    """
+    col_map = {
+        3: "ImageURL",   # <img src> or wrapping <a href>
+        4: "Name",
+        5: "Type",
+        6: "Color",
+        7: "Squad",
+        8: "Size(s)",
+        9: "Collector Number",
+        10: "Year",
+        11: "Bio",
+    }
+    log.step(f"Fetching data from {SITE_URL} ...")
+    try:
+        resp = session.get(SITE_URL, headers=HEADERS, timeout=DEFAULT_PAGE_TIMEOUT)
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        log.warn(f"Failed to fetch site: {e}")
+        return []
+
+    soup = BeautifulSoup(resp.content, "html.parser")
+    tbody = soup.select_one("table#dex tbody")
+    if not tbody:
+        log.warn("Could not find table#dex tbody in site HTML.")
+        return []
+
+    rows: list[dict[str, str | None]] = []
+    for tr in tbody.find_all("tr"):
+        row: dict[str, str | None] = {
+            "Name": None, "URL": None, "ImageURL": None,
+            "Type": None, "Color": None, "Squad": None,
+            "Size(s)": None, "Collector Number": None, "Year": None,
+            "Bio": None, "Extra": None,
+        }
+        for td in tr.find_all("td"):
+            col = td.get("data-col")
+            if col is None:
+                continue
+            col = int(col)
+            if col not in col_map:
+                continue
+            field = col_map[col]
+            if field == "ImageURL":
+                img = td.find("img")
+                link = td.find("a")
+                row["ImageURL"] = (link.get("href") if link else None) or (img.get("src") if img else None)
+            else:
+                row[field] = td.get_text(strip=True) or None
+        if row.get("Name"):
+            rows.append(row)
+
+    log.info(f"Loaded {len(rows)} Squishmallows from site.", 0)
+    return rows
 
 
 def normalize_label(label: str) -> str:
@@ -1047,11 +1118,10 @@ def _table_config() -> tuple[list[str], set[str], set[str], set[str]]:
         "Collector Number",
         "Year",
         "Bio",
-        "Page",
     ]
     hidden_default = {"Squad", "Size(s)", "Collector Number"}
-    no_sort = {"♥", "Own", "🛒", "Image", "Page", "Bio"}
-    html_columns = {"Image", "Page"}
+    no_sort = {"♥", "Own", "🛒", "Image", "Bio"}
+    html_columns = {"Image"}
     return columns, hidden_default, no_sort, html_columns
 
 
@@ -1090,9 +1160,8 @@ def _build_table_body(
             elif col == "🛒":
                 # Buy button for Amazon affiliate link
                 name = row.get("Name") or ""
-                # Create Amazon search link (will be replaced with ASIN links later)
-                search_query = f"{name} squishmallow".replace(" ", "+")
-                buy_link = f"https://www.amazon.com/s?k={search_query}&tag=adrianwedd-20"
+                # Use centralized affiliate link generation
+                buy_link = search_amazon_url(name)
                 cells.append(
                     f'<td data-col="{i}"><a href="{buy_link}" target="_blank" rel="noopener" class="buy-btn" data-id="{row_id}" aria-label="Buy on Amazon">🛒</a></td>'
                 )
@@ -1482,6 +1551,303 @@ def _render_css(thumb_size: int, thumb_size_768: int, thumb_size_480: int) -> st
   .footer-links a:hover {{
     text-decoration: underline;
   }}
+  /* Pagination */
+  .pagination {{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }}
+  .page-btn {{
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: var(--card);
+    cursor: pointer;
+    font-size: 16px;
+    min-width: 40px;
+    transition: all 0.15s;
+  }}
+  .page-btn:hover:not(:disabled) {{
+    border-color: var(--accent);
+    background: #e0f7fa;
+  }}
+  .page-btn:disabled {{
+    opacity: 0.3;
+    cursor: not-allowed;
+  }}
+  .page-info {{
+    padding: 8px 16px;
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 500;
+  }}
+  .page-size {{
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: var(--card);
+    cursor: pointer;
+    font-size: 14px;
+  }}
+  .page-size:hover {{
+    border-color: var(--accent);
+  }}
+  @media (max-width: 480px) {{
+    .pagination {{
+      gap: 4px;
+      padding: 8px;
+    }}
+    .page-btn {{
+      padding: 6px 10px;
+      font-size: 14px;
+      min-width: 36px;
+    }}
+    .page-info {{
+      font-size: 13px;
+      padding: 6px 12px;
+    }}
+    .page-size {{
+      font-size: 13px;
+      padding: 6px 10px;
+    }}
+  }}
+  /* ─── View toggle ─── */
+  .view-toggle {{
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.7);
+    border: 2px solid rgba(255,255,255,0.5);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
+  }}
+  .view-btn {{
+    padding: 8px 12px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+  }}
+  .view-btn[aria-pressed="true"] {{
+    background: var(--card);
+    color: #00879a;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }}
+  /* ─── Card view ─── */
+  .card-wrap {{
+    padding: 0 16px 28px;
+  }}
+  .card-toolbar {{
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.88);
+    border: 1px solid rgba(0,0,0,0.07);
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+  }}
+  .card-wrap.active .card-toolbar {{
+    display: flex;
+  }}
+  .card-toolbar label {{
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 700;
+  }}
+  .card-sort {{
+    margin-left: auto;
+    min-width: 220px;
+    max-width: 340px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 2px solid #d9eef1;
+    background: #fff;
+    font-size: 14px;
+  }}
+  .card-grid {{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 14px;
+  }}
+  .card-loader {{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 600;
+  }}
+  .card-loader[hidden] {{ display: none; }}
+  .card-loader-spinner {{
+    width: 28px;
+    height: 28px;
+    border: 3px solid #d9eef1;
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: card-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }}
+  @keyframes card-spin {{ to {{ transform: rotate(360deg); }} }}
+  .squish-card {{
+    position: relative;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 10px;
+    background:
+      radial-gradient(circle at top right, rgba(0,188,212,0.12), transparent 45%),
+      radial-gradient(circle at top left, rgba(255,255,255,0.8), transparent 55%),
+      #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }}
+  @media (prefers-reduced-motion: no-preference) {{
+    #cardWrap.active {{
+      animation: cardWrapFadeIn 0.15s ease;
+    }}
+    @keyframes cardWrapFadeIn {{
+      from {{ opacity: 0; }}
+      to   {{ opacity: 1; }}
+    }}
+    .squish-card {{
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }}
+    .squish-card:hover {{
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(0,0,0,0.12);
+    }}
+  }}
+  .card-media {{
+    position: relative;
+    display: block;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #eafcff;
+    aspect-ratio: 1 / 1;
+  }}
+  .card-media img {{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border: none;
+    border-radius: 0;
+  }}
+  .card-title {{
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 8px;
+  }}
+  .card-title h2 {{
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.15;
+  }}
+  .card-type {{
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+  }}
+  .card-meta {{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }}
+  .chip {{
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: #e7fbfe;
+    border: 1px solid #caeff4;
+    color: #155760;
+    font-size: 12px;
+    line-height: 1.2;
+  }}
+  .chip strong {{
+    color: #0b7280;
+    font-weight: 700;
+  }}
+  .card-bio {{
+    margin: 0;
+    color: #4f4a45;
+    font-size: 13px;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 4.8em;
+  }}
+  .card-actions {{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 4px;
+  }}
+  .card-own-wrap {{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }}
+  .card-actions .buy-btn {{
+    margin-left: auto;
+    padding: 6px 10px;
+    font-size: 16px;
+  }}
+  /* ─── Mode visibility ─── */
+  .mode-table .card-wrap {{ display: none; }}
+  .mode-cards .table-wrap {{ display: none; }}
+  .mode-cards .pagination {{ display: none; }}
+  .mode-cards .col-btn {{
+    opacity: 0.55;
+    cursor: not-allowed;
+  }}
+  .mode-cards .col-btn:hover {{
+    border-color: #ddd;
+  }}
+  @media (max-width: 768px) {{
+    .view-toggle {{ order: -1; }}
+    .card-wrap {{ padding: 0 8px 20px; }}
+    .card-toolbar {{
+      flex-direction: column;
+      align-items: flex-start;
+    }}
+    .card-sort {{ min-width: 0; max-width: none; }}
+    .card-grid {{
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+    }}
+  }}
+  @media (max-width: 480px) {{
+    .card-wrap {{ padding: 0 6px 16px; }}
+    .card-grid {{
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+    }}
+  }}
 """
 
 
@@ -1569,6 +1935,69 @@ def render_html(
 }}
 </script>
 
+<!-- Organization JSON-LD -->
+<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Squishmallowdex",
+  "url": "https://squishmallowdex.com",
+  "logo": "https://squishmallowdex.com/og-image.png",
+  "description": "Your comprehensive database for Squishmallows - search, track, and collect over 3,000 plush toys",
+  "sameAs": [
+    "https://github.com/adrianwedd/squishmallowdex"
+  ],
+  "contactPoint": {{
+    "@type": "ContactPoint",
+    "contactType": "Customer Service",
+    "url": "https://squishmallowdex.com/about"
+  }}
+}}
+</script>
+
+<!-- CollectionPage JSON-LD -->
+<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "{title}",
+  "description": "Browse and search through the complete collection of Squishmallows plush toys - over 3,000 unique characters",
+  "url": "https://squishmallowdex.com/squishmallowdex",
+  "about": {{
+    "@type": "Thing",
+    "name": "Squishmallows",
+    "description": "Collectible plush toys by Kelly Toy Holdings LLC"
+  }},
+  "mainEntity": {{
+    "@type": "ItemList",
+    "numberOfItems": {len(rows)},
+    "itemListElement": "Collection of Squishmallows plush toys"
+  }}
+}}
+</script>
+
+<!-- BreadcrumbList JSON-LD -->
+<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {{
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://squishmallowdex.com"
+    }},
+    {{
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Collection",
+      "item": "https://squishmallowdex.com/squishmallowdex"
+    }}
+  ]
+}}
+</script>
+
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -1581,7 +2010,7 @@ def render_html(
 {css}
 </style>
 </head>
-<body>
+<body class="mode-cards">
 <header>
   {logo_html}
   <div class="header-text">
@@ -1590,6 +2019,11 @@ def render_html(
   </div>
   <div class="controls">
     <input id="search" class="search" type="search" placeholder="Search by name, type, color..."/>
+    <div class="view-toggle" role="group" aria-label="View mode">
+      <button class="view-btn" id="viewTableBtn" type="button" aria-pressed="false">Table</button>
+      <button class="view-btn" id="viewCardsBtn" type="button" aria-pressed="true">Cards</button>
+      <button class="view-btn" id="compactBtn" type="button" aria-pressed="false" title="Compact card view" hidden>Compact</button>
+    </div>
     <div class="filters">
       <button class="filter-btn" id="filterFav">❤️ Favourites</button>
       <button class="filter-btn" id="filterOwn">✓ I Own</button>
@@ -1601,6 +2035,19 @@ def render_html(
   </div>
 </header>
 <div class="count" id="count"></div>
+<div class="pagination" id="paginationTop">
+  <button class="page-btn" id="firstPage" aria-label="First page">«</button>
+  <button class="page-btn" id="prevPage" aria-label="Previous page">‹</button>
+  <span class="page-info" id="pageInfo">Page 1</span>
+  <button class="page-btn" id="nextPage" aria-label="Next page">›</button>
+  <button class="page-btn" id="lastPage" aria-label="Last page">»</button>
+  <select class="page-size" id="pageSize" aria-label="Items per page">
+    <option value="50">50 per page</option>
+    <option value="100" selected>100 per page</option>
+    <option value="250">250 per page</option>
+    <option value="500">500 per page</option>
+  </select>
+</div>
 <div class="table-wrap">
   <table id="dex">
     <thead>{head}</thead>
@@ -1609,201 +2056,531 @@ def render_html(
     </tbody>
   </table>
 </div>
+<div class="card-wrap" id="cardWrap" aria-live="polite">
+  <div class="card-toolbar">
+    <label for="cardSort">Sort cards by</label>
+    <select id="cardSort" class="card-sort" aria-label="Sort cards">
+      <option value="table">Table order</option>
+      <option value="name:asc">Name (A–Z)</option>
+      <option value="name:desc">Name (Z–A)</option>
+      <option value="type:asc">Type (A–Z)</option>
+      <option value="type:desc">Type (Z–A)</option>
+      <option value="year:desc">Year (newest)</option>
+      <option value="year:asc">Year (oldest)</option>
+      <option value="collector:desc">Collector # (high)</option>
+      <option value="collector:asc">Collector # (low)</option>
+    </select>
+  </div>
+  <div class="card-loader" id="cardLoader" hidden aria-label="Loading cards…" role="status"><span class="card-loader-spinner"></span><span>Loading cards…</span></div>
+  <div class="card-grid" id="cardGrid"></div>
+</div>
 <script>
 (function() {{
-  const colConfig = {col_config};
-  const table = document.getElementById('dex');
-  const tbody = table.querySelector('tbody');
-  const headers = Array.from(table.querySelectorAll('th'));
-  const search = document.getElementById('search');
-  const colBtn = document.getElementById('colBtn');
-  const colDropdown = document.getElementById('colDropdown');
-  const countEl = document.getElementById('count');
+  // ─── Safe localStorage ───
+  function safeGet(key, def) {{
+    try {{
+      const v = localStorage.getItem(key);
+      return v !== null ? v : (def !== undefined ? def : '{{}}');
+    }} catch(e) {{ return def !== undefined ? def : '{{}}'; }}
+  }}
+  function safeSet(key, value) {{
+    try {{ localStorage.setItem(key, value); }} catch(e) {{}}
+  }}
 
-  // Load saved column visibility
-  let visibility = {{}};
-  try {{
-    visibility = JSON.parse(localStorage.getItem('squishdex-cols') || '{{}}');
-  }} catch(e) {{}}
+  // ─── DOM refs ───
+  const colConfig    = {col_config};
+  const table        = document.getElementById('dex');
+  const tbody        = table.querySelector('tbody');
+  const headers      = Array.from(table.querySelectorAll('th'));
+  const search       = document.getElementById('search');
+  const colBtn       = document.getElementById('colBtn');
+  const colDropdown  = document.getElementById('colDropdown');
+  const countEl      = document.getElementById('count');
+  const filterFav    = document.getElementById('filterFav');
+  const filterOwn    = document.getElementById('filterOwn');
+  const viewTableBtn = document.getElementById('viewTableBtn');
+  const viewCardsBtn = document.getElementById('viewCardsBtn');
+  const cardWrap     = document.getElementById('cardWrap');
+  const cardGrid     = document.getElementById('cardGrid');
+  const cardSort     = document.getElementById('cardSort');
+  const cardLoader   = document.getElementById('cardLoader');
+  const firstPageBtn = document.getElementById('firstPage');
+  const prevPageBtn  = document.getElementById('prevPage');
+  const nextPageBtn  = document.getElementById('nextPage');
+  const lastPageBtn  = document.getElementById('lastPage');
+  const pageInfo     = document.getElementById('pageInfo');
+  const pageSizeEl   = document.getElementById('pageSize');
 
-  // Initialize visibility from config/storage
-  colConfig.forEach((c, i) => {{
-    if (visibility[c.name] === undefined) {{
-      visibility[c.name] = !c.hidden;
-    }}
+  // ─── State ───
+  const sortableCols = new Map([[4,'name'],[5,'type'],[6,'color'],[7,'squad'],[8,'sizes'],[9,'collector'],[10,'year']]);
+  const fieldToCol   = new Map(Array.from(sortableCols).map(([col,field]) => [field, col]));
+  let visibility  = {{}};
+  let favourites  = {{}};
+  let owned       = {{}};
+  let buyClicks   = {{}};
+  let showOnlyFav = false;
+  let showOnlyOwn = false;
+  let viewMode    = safeGet('squishdex-view') === 'table' ? 'table' : 'cards';
+  let viewRenderToken = 0;
+  let searchTimer = null;
+  let currentPage = 1;
+  let pageSize    = 100;
+  let lastTotalPages = 1;
+  const sortState = {{ field: null, dir: 1, col: -1 }};
+
+  try {{ visibility = JSON.parse(safeGet('squishdex-cols')); }} catch(e) {{}}
+  try {{ favourites = JSON.parse(safeGet('squishdex-fav')); }} catch(e) {{}}
+  try {{ owned      = JSON.parse(safeGet('squishdex-own')); }} catch(e) {{}}
+  try {{ buyClicks  = JSON.parse(safeGet('squishdex-buyclicks')); }} catch(e) {{}}
+
+  colConfig.forEach(c => {{
+    if (visibility[c.name] === undefined) visibility[c.name] = !c.hidden;
   }});
 
-  // Build column picker
-  colConfig.forEach((c, i) => {{
-    const label = document.createElement('label');
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = visibility[c.name];
-    cb.addEventListener('change', () => {{
-      visibility[c.name] = cb.checked;
-      localStorage.setItem('squishdex-cols', JSON.stringify(visibility));
-      applyVisibility();
+  // ─── Row models (extracted once from DOM) ───
+  const rowModels = Array.from(tbody.querySelectorAll('tr')).map(extractRowModel);
+  const cardsById = new Map();
+
+  // ─── Bootstrap ───
+  buildColumnPicker();
+  buildSortHeaders();
+  buildCardView();
+  bindControls();
+  bindItemControls();
+  applyVisibility();
+  restoreCardSort();
+  applyViewMode(viewMode);
+
+  // ─── Row model extraction ───
+  function extractRowModel(tr, sourceIndex) {{
+    const cells = tr.children;
+    const imageLink = cells[3]?.querySelector('a');
+    const img       = imageLink?.querySelector('img');
+    const buyLink   = cells[2]?.querySelector('a');
+    const m = {{
+      id: tr.dataset.id, row: tr, sourceIndex,
+      name:      cellText(cells[4]),
+      type:      cellText(cells[5]),
+      color:     cellText(cells[6]),
+      squad:     cellText(cells[7]),
+      sizes:     cellText(cells[8]),
+      collector: cellText(cells[9]),
+      year:      cellText(cells[10]),
+      bio:       cellText(cells[11]),
+      buyHref:   buyLink  ? buyLink.getAttribute('href')  : '',
+      imageHref: imageLink ? imageLink.getAttribute('href') : '',
+      imageSrc:  img ? img.getAttribute('src')  : '',
+      imageAlt:  img ? (img.getAttribute('alt') || '') : ''
+    }};
+    m.collectorNum = parseNum(m.collector);
+    m.yearNum      = parseNum(m.year);
+    m.searchText   = tr.textContent.toLowerCase();
+    return m;
+  }}
+  function cellText(cell) {{ return cell ? cell.textContent.trim() : ''; }}
+  function parseNum(v) {{
+    if (!v) return null;
+    const n = parseFloat(String(v).replace(/,/g, ''));
+    return Number.isFinite(n) ? n : null;
+  }}
+
+  // ─── Column picker ───
+  function buildColumnPicker() {{
+    colConfig.forEach(c => {{
+      const label = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = visibility[c.name];
+      cb.addEventListener('change', () => {{
+        visibility[c.name] = cb.checked;
+        safeSet('squishdex-cols', JSON.stringify(visibility));
+        applyVisibility();
+      }});
+      label.append(cb, document.createTextNode(c.name));
+      colDropdown.appendChild(label);
     }});
-    label.appendChild(cb);
-    label.appendChild(document.createTextNode(c.name));
-    colDropdown.appendChild(label);
-  }});
-
-  // Toggle dropdown
-  colBtn.addEventListener('click', (e) => {{
-    e.stopPropagation();
-    colDropdown.classList.toggle('open');
-  }});
-  document.addEventListener('click', () => {{
-    colDropdown.classList.remove('open');
-  }});
-  colDropdown.addEventListener('click', (e) => {{
-    e.stopPropagation();
-  }});
-
-  // Apply column visibility
+    colBtn.addEventListener('click', e => {{
+      if (viewMode === 'cards') return;
+      e.stopPropagation();
+      colDropdown.classList.toggle('open');
+    }});
+    document.addEventListener('click', () => colDropdown.classList.remove('open'));
+    colDropdown.addEventListener('click', e => e.stopPropagation());
+  }}
   function applyVisibility() {{
     colConfig.forEach((c, i) => {{
       const show = visibility[c.name];
-      table.querySelectorAll(`[data-col="${{i}}"]`).forEach(el => {{
-        el.classList.toggle('hidden', !show);
-      }});
+      table.querySelectorAll(`[data-col="${{i}}"]`).forEach(el => el.classList.toggle('hidden', !show));
     }});
   }}
-  applyVisibility();
 
-  // Sorting
-  let sortCol = -1;
-  let sortDir = 1;
-
-  headers.forEach((th, i) => {{
-    if (th.dataset.sortable === 'true') {{
-      const indicator = document.createElement('span');
-      indicator.className = 'sort-indicator';
-      indicator.textContent = '↕';
-      th.appendChild(indicator);
-
+  // ─── Sort headers ───
+  function buildSortHeaders() {{
+    headers.forEach((th, i) => {{
+      if (th.dataset.sortable !== 'true') return;
+      const ind = document.createElement('span');
+      ind.className = 'sort-indicator';
+      ind.textContent = '↕';
+      th.appendChild(ind);
+      th._sortIndicator = ind;
+      th.setAttribute('tabindex', '0');
       th.addEventListener('click', () => {{
-        if (sortCol === i) {{
-          sortDir *= -1;
-        }} else {{
-          sortCol = i;
-          sortDir = 1;
-        }}
-        sortTable();
-        headers.forEach(h => h.classList.remove('sorted'));
-        th.classList.add('sorted');
-        indicator.textContent = sortDir === 1 ? '↑' : '↓';
+        const field = sortableCols.get(i);
+        if (!field) return;
+        sortState.col === i ? (sortState.dir *= -1) : Object.assign(sortState, {{col: i, field, dir: 1}});
+        persistCardSort();
+        syncCardSortControl();
+        applyFiltersAndSort();
+      }});
+      th.addEventListener('keydown', e => {{
+        if (e.key === 'Enter' || e.key === ' ') {{ e.preventDefault(); th.click(); }}
+      }});
+    }});
+  }}
+  function updateHeaderIndicators() {{
+    headers.forEach(th => {{
+      if (!th._sortIndicator) return;
+      th.classList.remove('sorted');
+      th._sortIndicator.textContent = '↕';
+    }});
+    if (sortState.col < 0) return;
+    const th = headers[sortState.col];
+    if (th?._sortIndicator) {{
+      th.classList.add('sorted');
+      th._sortIndicator.textContent = sortState.dir === 1 ? '↑' : '↓';
+    }}
+  }}
+
+  // ─── Card view ───
+  function buildCardView() {{
+    const frag = document.createDocumentFragment();
+    rowModels.forEach(m => {{
+      const card = document.createElement('article');
+      card.className = 'squish-card';
+      card.dataset.id = m.id;
+
+      const media = document.createElement(m.imageHref ? 'a' : 'div');
+      media.className = 'card-media';
+      if (m.imageHref) {{
+        media.href = m.imageHref; media.target = '_blank'; media.rel = 'noopener';
+        media.setAttribute('aria-label', `View full image of ${{m.name || 'Squishmallow'}}`);
+      }}
+      if (m.imageSrc) {{
+        const img = document.createElement('img');
+        img.src = m.imageSrc; img.loading = 'lazy';
+        img.alt = m.imageAlt || `${{m.name || 'Squishmallow'}} image`;
+        media.appendChild(img);
+      }}
+      card.appendChild(media);
+
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'card-title';
+      const titleText = document.createElement('div');
+      const h2 = document.createElement('h2');
+      h2.textContent = m.name || 'Unknown';
+      titleText.appendChild(h2);
+      const typeP = document.createElement('p');
+      typeP.className = 'card-type';
+      typeP.textContent = m.type || '';
+      titleText.appendChild(typeP);
+      titleDiv.appendChild(titleText);
+      card.appendChild(titleDiv);
+
+      const meta = document.createElement('div');
+      meta.className = 'card-meta';
+      appendChip(meta, 'Color', m.color);
+      appendChip(meta, 'Year',  m.year);
+      appendChip(meta, 'Size',  m.sizes, 'low');
+      appendChip(meta, '#',     m.collector);
+      appendChip(meta, 'Squad', m.squad, 'low');
+      card.appendChild(meta);
+
+      const bio = document.createElement('p');
+      bio.className = 'card-bio';
+      bio.textContent = m.bio || 'No bio listed yet.';
+      card.appendChild(bio);
+
+      const actions = document.createElement('div');
+      actions.className = 'card-actions';
+      const heart = document.createElement('button');
+      heart.type = 'button'; heart.className = 'heart-btn'; heart.dataset.id = m.id;
+      heart.setAttribute('aria-label', `Favourite ${{m.name || 'Squishmallow'}}`);
+      heart.textContent = '♡';
+      actions.appendChild(heart);
+
+      const ownWrap = document.createElement('label');
+      ownWrap.className = 'card-own-wrap';
+      const ownCb = document.createElement('input');
+      ownCb.type = 'checkbox'; ownCb.className = 'own-cb'; ownCb.dataset.id = m.id;
+      ownCb.setAttribute('aria-label', `I own ${{m.name || 'this squishmallow'}}`);
+      const ownTxt = document.createElement('span');
+      ownTxt.textContent = 'Own';
+      ownWrap.append(ownCb, ownTxt);
+      actions.appendChild(ownWrap);
+
+      if (m.buyHref) {{
+        const buy = document.createElement('a');
+        buy.className = 'buy-btn'; buy.href = m.buyHref;
+        buy.target = '_blank'; buy.rel = 'noopener'; buy.dataset.id = m.id;
+        buy.textContent = '🛒';
+        buy.setAttribute('aria-label', `Buy ${{m.name || 'Squishmallow'}} on Amazon`);
+        actions.appendChild(buy);
+      }} else {{ actions.appendChild(document.createElement('span')); }}
+
+      card.appendChild(actions);
+      m.card = card;
+      cardsById.set(m.id, card);
+      frag.appendChild(card);
+    }});
+    cardGrid.appendChild(frag);
+  }}
+  function appendChip(parent, label, value, priority) {{
+    if (!value) return;
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    if (priority) chip.dataset.priority = priority;
+    const strong = document.createElement('strong');
+    strong.textContent = label;
+    chip.appendChild(strong);
+    chip.appendChild(document.createTextNode(` ${{value}}`));
+    parent.appendChild(chip);
+  }}
+
+  // ─── View mode ───
+  function applyViewMode(mode) {{
+    viewMode = mode === 'cards' ? 'cards' : 'table';
+    document.body.classList.toggle('mode-cards', viewMode === 'cards');
+    document.body.classList.toggle('mode-table', viewMode === 'table');
+    viewTableBtn.setAttribute('aria-pressed', String(viewMode === 'table'));
+    viewCardsBtn.setAttribute('aria-pressed', String(viewMode === 'cards'));
+    const disabled = viewMode === 'cards';
+    colBtn.disabled = disabled;
+    colBtn.setAttribute('aria-disabled', String(disabled));
+    colBtn.title = disabled ? 'Table view only' : '';
+    if (disabled) colDropdown.classList.remove('open');
+    const compactBtn = document.getElementById('compactBtn');
+    if (compactBtn) compactBtn.hidden = viewMode !== 'cards';
+    safeSet('squishdex-view', viewMode);
+
+    if (viewMode === 'cards') {{
+      const token = ++viewRenderToken;
+      cardLoader.hidden = false;
+      cardGrid.hidden = true;
+      requestAnimationFrame(() => requestAnimationFrame(() => {{
+        if (token !== viewRenderToken) return;
+        applyFiltersAndSort();
+        cardLoader.hidden = true;
+        cardGrid.hidden = false;
+        cardWrap.classList.add('active');
+      }}));
+    }} else {{
+      ++viewRenderToken;
+      cardWrap.classList.remove('active');
+      applyFiltersAndSort();
+    }}
+  }}
+
+  // ─── Card sort ───
+  function restoreCardSort() {{
+    applyCardSortSelection(localStorage.getItem('squishdex-card-sort') || 'table');
+    syncCardSortControl();
+  }}
+  function applyCardSortSelection(value) {{
+    if (!value || value === 'table') {{
+      sortState.field = null; sortState.dir = 1; sortState.col = -1;
+      updateHeaderIndicators(); return;
+    }}
+    const [field, dir] = value.split(':');
+    sortState.field = field;
+    sortState.dir   = dir === 'desc' ? -1 : 1;
+    sortState.col   = fieldToCol.has(field) ? fieldToCol.get(field) : -1;
+    updateHeaderIndicators();
+  }}
+  function currentSortValue() {{
+    return sortState.field ? `${{sortState.field}}:${{sortState.dir === 1 ? 'asc' : 'desc'}}` : 'table';
+  }}
+  function persistCardSort() {{
+    safeSet('squishdex-card-sort', currentSortValue());
+  }}
+  function syncCardSortControl() {{
+    const value = currentSortValue();
+    cardSort.value = Array.from(cardSort.options).some(o => o.value === value) ? value : 'table';
+    updateHeaderIndicators();
+  }}
+
+  // ─── Controls ───
+  function bindControls() {{
+    search.addEventListener('input', () => {{
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {{ currentPage = 1; applyFiltersAndSort(); }}, 130);
+    }});
+    filterFav.addEventListener('click', () => {{
+      showOnlyFav = !showOnlyFav;
+      filterFav.classList.toggle('active', showOnlyFav);
+      currentPage = 1; applyFiltersAndSort();
+    }});
+    filterOwn.addEventListener('click', () => {{
+      showOnlyOwn = !showOnlyOwn;
+      filterOwn.classList.toggle('active', showOnlyOwn);
+      currentPage = 1; applyFiltersAndSort();
+    }});
+    viewTableBtn.addEventListener('click', () => applyViewMode('table'));
+    viewCardsBtn.addEventListener('click', () => applyViewMode('cards'));
+    cardSort.addEventListener('change', () => {{
+      applyCardSortSelection(cardSort.value);
+      persistCardSort();
+      applyFiltersAndSort();
+    }});
+    const compactBtn = document.getElementById('compactBtn');
+    let density = safeGet('squishdex-density', 'normal');
+    const applyDensity = () => {{
+      document.body.classList.toggle('density-compact', density === 'compact');
+      if (compactBtn) compactBtn.setAttribute('aria-pressed', String(density === 'compact'));
+    }};
+    applyDensity();
+    if (compactBtn) {{
+      compactBtn.addEventListener('click', () => {{
+        density = density === 'compact' ? 'normal' : 'compact';
+        safeSet('squishdex-density', density);
+        applyDensity();
       }});
     }}
-  }});
-
-  function sortTable() {{
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    rows.sort((a, b) => {{
-      const aVal = a.children[sortCol]?.textContent || '';
-      const bVal = b.children[sortCol]?.textContent || '';
-      // Try numeric sort first
-      const aNum = parseFloat(aVal);
-      const bNum = parseFloat(bVal);
-      if (!isNaN(aNum) && !isNaN(bNum)) {{
-        return (aNum - bNum) * sortDir;
-      }}
-      return aVal.localeCompare(bVal) * sortDir;
+    firstPageBtn.addEventListener('click', () => goToPage(1));
+    prevPageBtn.addEventListener('click', () => goToPage(currentPage - 1));
+    nextPageBtn.addEventListener('click', () => goToPage(currentPage + 1));
+    lastPageBtn.addEventListener('click', () => goToPage(lastTotalPages));
+    pageSizeEl.addEventListener('change', () => {{
+      pageSize = parseInt(pageSizeEl.value);
+      currentPage = 1;
+      applyFiltersAndSort();
     }});
-    rows.forEach(r => tbody.appendChild(r));
+  }}
+  function goToPage(page) {{
+    currentPage = page;
+    applyFiltersAndSort();
+    window.scrollTo({{ top: 0, behavior: 'smooth' }});
   }}
 
-  // Search
-  function updateCount() {{
-    const visible = tbody.querySelectorAll('tr:not([style*="display: none"])').length;
-    const total = tbody.querySelectorAll('tr').length;
-    countEl.textContent = visible === total ? `${{total}} Squishmallows` : `Showing ${{visible}} of ${{total}}`;
-  }}
-
-  // ─── Favourites & Ownership ───
-  let favourites = {{}};
-  let owned = {{}};
-  try {{
-    favourites = JSON.parse(localStorage.getItem('squishdex-fav') || '{{}}');
-    owned = JSON.parse(localStorage.getItem('squishdex-own') || '{{}}');
-  }} catch(e) {{}}
-
-  // Initialize hearts and checkboxes from storage
-  document.querySelectorAll('.heart-btn').forEach(btn => {{
-    const id = btn.dataset.id;
-    if (favourites[id]) {{
-      btn.classList.add('active');
-      btn.textContent = '❤️';
-    }}
-    btn.addEventListener('click', () => {{
-      favourites[id] = !favourites[id];
-      btn.classList.toggle('active', favourites[id]);
-      btn.textContent = favourites[id] ? '❤️' : '♡';
-      localStorage.setItem('squishdex-fav', JSON.stringify(favourites));
-      applyFilters();
-    }});
-  }});
-
-  document.querySelectorAll('.own-cb').forEach(cb => {{
-    const id = cb.dataset.id;
-    cb.checked = !!owned[id];
-    cb.addEventListener('change', () => {{
-      owned[id] = cb.checked;
-      localStorage.setItem('squishdex-own', JSON.stringify(owned));
-      applyFilters();
-    }});
-  }});
-
-  // Filter buttons
-  const filterFav = document.getElementById('filterFav');
-  const filterOwn = document.getElementById('filterOwn');
-  let showOnlyFav = false;
-  let showOnlyOwn = false;
-
-  filterFav.addEventListener('click', () => {{
-    showOnlyFav = !showOnlyFav;
-    filterFav.classList.toggle('active', showOnlyFav);
-    applyFilters();
-  }});
-
-  filterOwn.addEventListener('click', () => {{
-    showOnlyOwn = !showOnlyOwn;
-    filterOwn.classList.toggle('active', showOnlyOwn);
-    applyFilters();
-  }});
-
-  function applyFilters() {{
-    const q = search.value.trim().toLowerCase();
-    Array.from(tbody.querySelectorAll('tr')).forEach(row => {{
-      const id = row.dataset.id;
-      const text = row.textContent.toLowerCase();
-      const matchesSearch = text.includes(q);
-      const matchesFav = !showOnlyFav || favourites[id];
-      const matchesOwn = !showOnlyOwn || owned[id];
-      row.style.display = (matchesSearch && matchesFav && matchesOwn) ? '' : 'none';
-    }});
-    updateCount();
-  }}
-
-  search.addEventListener('input', applyFilters);
-
-  updateCount();
-
-  // ─── Affiliate Analytics (Privacy-First) ───
-  let buyClicks = {{}};
-  try {{
-    buyClicks = JSON.parse(localStorage.getItem('squishdex-buyclicks') || '{{}}');
-  }} catch(e) {{}}
-
-  document.querySelectorAll('.buy-btn').forEach(btn => {{
-    btn.addEventListener('click', () => {{
+  // ─── Item controls ───
+  function bindItemControls() {{
+    document.querySelectorAll('.heart-btn').forEach(btn => {{
       const id = btn.dataset.id;
-      buyClicks[id] = (buyClicks[id] || 0) + 1;
-      localStorage.setItem('squishdex-buyclicks', JSON.stringify(buyClicks));
-      // Note: No personal data collected, just click counts per item
+      btn.addEventListener('click', () => {{
+        favourites[id] = !favourites[id];
+        safeSet('squishdex-fav', JSON.stringify(favourites));
+        syncSelection(id);
+        applyFiltersAndSort();
+      }});
     }});
-  }});
+    document.querySelectorAll('.own-cb').forEach(cb => {{
+      const id = cb.dataset.id;
+      cb.addEventListener('change', () => {{
+        owned[id] = cb.checked;
+        safeSet('squishdex-own', JSON.stringify(owned));
+        syncSelection(id);
+        applyFiltersAndSort();
+      }});
+    }});
+    rowModels.forEach(m => syncSelection(m.id));
+    document.querySelectorAll('.buy-btn').forEach(btn => {{
+      btn.addEventListener('click', () => {{
+        const id = btn.dataset.id;
+        buyClicks[id] = (buyClicks[id] || 0) + 1;
+        safeSet('squishdex-buyclicks', JSON.stringify(buyClicks));
+      }});
+    }});
+  }}
+  function syncSelection(id) {{
+    const isFav = !!favourites[id];
+    document.querySelectorAll(`.heart-btn[data-id="${{id}}"]`).forEach(btn => {{
+      btn.classList.toggle('active', isFav);
+      btn.textContent = isFav ? '❤️' : '♡';
+    }});
+    const isOwned = !!owned[id];
+    document.querySelectorAll(`.own-cb[data-id="${{id}}"]`).forEach(cb => {{ cb.checked = isOwned; }});
+  }}
+
+  // ─── Filter + sort + pagination ───
+  function computeVisibleIds() {{
+    const q = search.value.trim().toLowerCase();
+    const ids = new Set();
+    rowModels.forEach(m => {{
+      const ok = (!q || m.searchText.includes(q))
+              && (!showOnlyFav || !!favourites[m.id])
+              && (!showOnlyOwn || !!owned[m.id]);
+      if (ok) ids.add(m.id);
+    }});
+    return ids;
+  }}
+  function compareModels(a, b) {{
+    if (!sortState.field) return a.sourceIndex - b.sourceIndex;
+    let r = 0;
+    if (sortState.field === 'collector' || sortState.field === 'year') {{
+      const an = sortState.field === 'collector' ? a.collectorNum : a.yearNum;
+      const bn = sortState.field === 'collector' ? b.collectorNum : b.yearNum;
+      if (an == null && bn == null) r = 0;
+      else if (an == null) return 1;
+      else if (bn == null) return -1;
+      else r = an - bn;
+    }} else {{
+      r = String(a[sortState.field] || '').toLowerCase().localeCompare(String(b[sortState.field] || '').toLowerCase());
+    }}
+    if (r === 0) r = String(a.name || '').localeCompare(String(b.name || ''));
+    if (r === 0) r = a.sourceIndex - b.sourceIndex;
+    return r * sortState.dir;
+  }}
+  function applyFiltersAndSort() {{
+    const visibleIds = computeVisibleIds();
+    const ordered    = rowModels.slice().sort(compareModels);
+    if (viewMode === 'table') {{
+      applyTablePagination(ordered, visibleIds);
+    }} else {{
+      const frag = document.createDocumentFragment();
+      ordered.forEach(m => {{
+        m.card.classList.toggle('hidden', !visibleIds.has(m.id));
+        frag.appendChild(m.card);
+      }});
+      cardGrid.appendChild(frag);
+      const visible = visibleIds.size, total = rowModels.length;
+      countEl.textContent = visible === total
+        ? `${{total}} Squishmallows`
+        : `Showing ${{visible}} of ${{total}}`;
+    }}
+  }}
+  function applyTablePagination(ordered, visibleIds) {{
+    const frag = document.createDocumentFragment();
+    ordered.forEach(m => frag.appendChild(m.row));
+    tbody.appendChild(frag);
+
+    const visibleModels = ordered.filter(m => visibleIds.has(m.id));
+    const filteredCount = visibleModels.length;
+    const total         = rowModels.length;
+    const totalPages    = Math.ceil(filteredCount / pageSize) || 1;
+    lastTotalPages = totalPages;
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const start = (currentPage - 1) * pageSize;
+    const end   = start + pageSize;
+    let visIdx = 0;
+    ordered.forEach(m => {{
+      if (!visibleIds.has(m.id)) {{ m.row.style.display = 'none'; return; }}
+      m.row.style.display = (visIdx >= start && visIdx < end) ? '' : 'none';
+      visIdx++;
+    }});
+
+    const showing = Math.min(pageSize, filteredCount - start);
+    pageInfo.textContent = `Page ${{currentPage}} of ${{totalPages}}`;
+    firstPageBtn.disabled = currentPage === 1;
+    prevPageBtn.disabled  = currentPage === 1;
+    nextPageBtn.disabled  = currentPage === totalPages;
+    lastPageBtn.disabled  = currentPage === totalPages;
+    if (filteredCount === total) {{
+      countEl.textContent = `Showing ${{start + 1}}–${{start + showing}} of ${{total}} Squishmallows`;
+    }} else {{
+      countEl.textContent = `Showing ${{start + 1}}–${{start + showing}} of ${{filteredCount}} (${{total}} total)`;
+    }}
+  }}
 }})();
 </script>
 <footer class="site-footer">
@@ -1870,11 +2647,6 @@ def build_html_rows(
                 row_html["Image"] = img_tag
         else:
             row_html["Image"] = ""
-        row_html["Page"] = (
-            f'<a class="page-link" href="{escape(row.get("URL") or "")}" target="_blank" rel="noopener">wiki</a>'
-            if row.get("URL")
-            else ""
-        )
         html_rows.append(row_html)
 
     if embed_images and total > 0:
@@ -2064,6 +2836,12 @@ def main() -> None:
         action="store_true",
         help="Simulate run without writing files (preview what would be collected).",
     )
+    collect.add_argument(
+        "--source",
+        choices=["wiki", "site"],
+        default="wiki",
+        help="Data source: 'wiki' scrapes the Fandom wiki (default), 'site' fetches from squishmallowdex.com.",
+    )
 
     # === Output Options ===
     output = ap.add_argument_group("📁 Output Files")
@@ -2246,6 +3024,28 @@ def main() -> None:
         # ─────────────────────────────────────────────────────────────────────────
         # COLLECTION MODE: Let's catch some Squishmallows!
         # ─────────────────────────────────────────────────────────────────────────
+
+        if args.source == "site":
+            # Fast path: pull all data from the deployed squishmallowdex.com in one request.
+            site_rows = fetch_from_site(session)
+            if site_rows:
+                rows = site_rows
+                save_collection(
+                    rows, session,
+                    html_path=args.out, csv_path=args.csv,
+                    images_dir=args.images_dir,
+                    download_images=not args.no_download_images,
+                    refresh=args.refresh,
+                    embed_images=args.embed_images,
+                    dry_run=args.dry_run,
+                    thumb_size=args.thumb_size,
+                    json_path=args.json,
+                )
+                log.summary(len(rows), existing_count, csv_path=args.csv, html_path=args.out)
+            else:
+                log.warn("No data retrieved from site. Nothing saved.")
+            return
+
         log.step("Step 1: Fetching the Master List of all Squishmallows...")
 
         if log.adventure_mode:

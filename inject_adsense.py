@@ -66,8 +66,17 @@ def process_file(file_path: Path) -> bool:
         else:
             return False
 
-    except Exception as e:
-        print(f"  ❌ Error processing file: {e}")
+    except FileNotFoundError:
+        print(f"  ❌ File not found: {file_path}")
+        return False
+    except PermissionError:
+        print(f"  ❌ Permission denied: {file_path}")
+        return False
+    except UnicodeDecodeError as e:
+        print(f"  ❌ Encoding error: {e}")
+        return False
+    except OSError as e:
+        print(f"  ❌ I/O error: {e}")
         return False
 
 
