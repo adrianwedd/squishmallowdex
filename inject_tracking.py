@@ -18,7 +18,7 @@ ANALYTICS_SCRIPT = '''<!-- Google tag (gtag.js) -->
   gtag('config', 'G-MLCG3SLHC2');
 </script>'''
 
-ADSENSE_SCRIPT = '''<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5242622588206425"
+ADSENSE_SCRIPT = '''<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6275306310835906"
      crossorigin="anonymous"></script>'''
 
 

@@ -43,7 +43,6 @@ If your computer asks, choose **Open** or **Run**. It is safe and only installs 
 You will see files like:
 
 - `squishmallowdex.html` - This is your beautiful collection page
-- `squishmallowdex.csv` - A spreadsheet version
 
 Tip: You can open the HTML file anytime (no internet needed once it is built).
 
@@ -76,22 +75,6 @@ Now it looks like an app and works offline.
 - [About](https://squishmallowdex.com/about.html)
 - [Usage Guide](https://squishmallowdex.com/guide.html)
 - [Roadmap](ROADMAP.md)
-
----
-
-## 🌐 Live Site - Cloudflare Pages
-
-This project is deployed on Cloudflare Pages with automatic builds on every push!
-
-**🌍 Live Site:** https://squishmallowdex.com
-
-The live site includes:
-- 🏠 Landing page with features and stats
-- 📖 Collection browser (3000+ Squishmallows)
-- ℹ️ About page with project details
-- 📚 Interactive usage guide
-- 🚀 Global CDN with edge caching
-- 📊 Privacy-first analytics
 
 ---
 
