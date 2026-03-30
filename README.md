@@ -6,7 +6,7 @@
 
 Welcome to a cozy, colorful collector's guide. Squishmallowdex gathers info from the wiki and turns it into a magical, searchable collection you can open anytime.
 
-🌐 **[Browse the Live Collection](https://adrianwedd.github.io/squishmallows/)** - Try it now on GitHub Pages!
+🌐 **[Browse the Live Collection](https://squishmallowdex.com)** - Try it now!
 
 ---
 
@@ -92,28 +92,6 @@ The live site includes:
 - 📚 Interactive usage guide
 - 🚀 Global CDN with edge caching
 - 📊 Privacy-first analytics
-
-### Deployment Setup
-
-**Quick Start:** See [CLOUDFLARE_QUICK_START.md](CLOUDFLARE_QUICK_START.md)
-**Full Guide:** See [CLOUDFLARE_SETUP.md](CLOUDFLARE_SETUP.md)
-
-**Build Command:** `bash cloudflare-build.sh`
-**Output Directory:** `/docs`
-
-The collection is automatically updated:
-- ✅ On every push to `main` branch (Cloudflare auto-deploy)
-- ✅ Weekly via GitHub Actions (Sunday 2am UTC)
-- ✅ Manually via Actions tab or Cloudflare dashboard
-
-### Why Cloudflare Pages?
-
-- **Unlimited bandwidth** (no GitHub Pages 100GB limit)
-- **Global CDN** with 300+ locations
-- **Instant deployments** with smart caching
-- **Built-in analytics** (privacy-first)
-- **DDoS protection** included
-- **Free SSL/TLS** certificates
 
 ---
 
